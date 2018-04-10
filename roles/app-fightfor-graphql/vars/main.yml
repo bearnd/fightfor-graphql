@@ -1,0 +1,60 @@
+---
+
+# PostgreSQL Server Settings.
+postgresql_python_library: "python-psycopg2"
+
+# PostgreSQL Server Databases.
+postgresql_databases:
+  - name: "fightfor"
+    port: 5432
+  - name: "test"
+    port: 5432
+# PostgreSQL Server Users.
+postgresql_users:
+  - name: "ffgraphql"
+    password: "zI7indC309irKG8S76BQnGScKo0fDpdPC84rroMA"
+    port: 5432
+
+app_fightfor_graphql:
+
+  # Application user settings.
+  user: ffgraphql
+  group: ffgraphql
+
+  # Application directories.
+  config_dir: /etc/fightfor-graphql
+  share_dir: /usr/local/share/fightfor-graphql
+  run_dir: /var/run/fightfor-graphql
+  log_dir: /var/log/fightfor-graphql
+  virtual_env_dir: /usr/local/share/fightfor-graphql/venvs/fightfor-graphql
+
+  # Gunicorn Configuration Settings.
+  gunicorn:
+    host: "127.0.0.1"
+    port: 5555
+    workers: 4
+    worker_class: sync
+
+  # Application Configuration Settings.
+  config:
+
+    dev:
+      # General Settings.
+      logger_level: DEBUG
+
+      # PostgreSQL Server Configuration Settings.
+      sql_host: "localhost"
+      sql_port: 5432
+      sql_username: "ffgraphql"
+      sql_password: "zI7indC309irKG8S76BQnGScKo0fDpdPC84rroMA"
+      sql_db: "fightfor"
+    prod:
+      # General Settings.
+      logger_level: INFO
+
+      # PostgreSQL Server Configuration Settings.
+      sql_host: "localhost"
+      sql_port: 5432
+      sql_username: "ffgraphql"
+      sql_password: "zI7indC309irKG8S76BQnGScKo0fDpdPC84rroMA"
+      sql_db: "fightfor"
