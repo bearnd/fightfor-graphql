@@ -34,7 +34,7 @@ setup(
         'Programming Language :: Python :: 3.6',
     ],
     description=("A GraphQL API over the SQLAlchemy ORM serving the project "
-                 "data via Flask."),
+                 "data via Falcon."),
     install_requires=requirements,
     long_description=readme + '\n\n' + history,
     include_package_data=True,
