@@ -8,7 +8,7 @@ Vagrant.configure("2") do |config|
     # define synced folders
     config.vm.synced_folder ".", "/home/vagrant/fightfor-graphql"
 
-    config.vm.define "ct_ingester" do |ffgraphql|
+    config.vm.define "ffgraphql" do |ffgraphql|
         # define virtualization provider
         ffgraphql.vm.provider "virtualbox"
         # define box
