@@ -8,7 +8,7 @@ from contextlib import redirect_stdout
 import json
 import falcon
 
-from excs import UnhandledError
+from ffgraphql.excs import UnhandledError
 
 
 def set_graphql_allow_header(
