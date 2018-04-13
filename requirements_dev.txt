@@ -11,4 +11,5 @@ graphene==2.1
 graphene-sqlalchemy==2.0.0
 validictory==1.1.1
 attrdict==2.0.0
+falcon==1.4.1
 git+http://gitlab-ci-token:YGVQHuviVKnqbJ1SyAXd@sunny.diskstation.me:30000/bearnd/fightfor-orm.git#egg=fform
