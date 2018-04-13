@@ -1,20 +1,5 @@
 ---
 
-# PostgreSQL Server Settings.
-postgresql_python_library: "python-psycopg2"
-
-# PostgreSQL Server Databases.
-postgresql_databases:
-  - name: "fightfor"
-    port: 5432
-  - name: "test"
-    port: 5432
-# PostgreSQL Server Users.
-postgresql_users:
-  - name: "ffgraphql"
-    password: "zI7indC309irKG8S76BQnGScKo0fDpdPC84rroMA"
-    port: 5432
-
 app_fightfor_graphql:
 
   # Application user settings.
@@ -43,7 +28,7 @@ app_fightfor_graphql:
       logger_level: DEBUG
 
       # PostgreSQL Server Configuration Settings.
-      sql_host: "localhost"
+      sql_host: "192.168.0.6"
       sql_port: 5432
       sql_username: "ffgraphql"
       sql_password: "zI7indC309irKG8S76BQnGScKo0fDpdPC84rroMA"

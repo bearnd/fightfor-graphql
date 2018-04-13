@@ -7,12 +7,6 @@
   ignore_errors: true
   become: true
 
-- name: Install PostgreSQL.
-  include_role:
-    name: geerlingguy.postgresql
-  ignore_errors: true
-  when: app_fightfor_graphql.is_vagrant is defined and app_fightfor_graphql.is_vagrant == True
-
 - name: Install apt dependencies.
   apt:
     name: "{{ item }}"
@@ -47,17 +41,6 @@
     - "{{ app_fightfor_graphql.run_dir }}"
     - "{{ app_fightfor_graphql.log_dir }}"
   become: true
-
-- name: Copy PostgreSQL configuration files.
-  copy:
-    src: "{{ item }}"
-    dest: "//etc/postgresql/9.5/main/{{ item }}"
-    owner: "postgres"
-    mode: 0600
-  with_items:
-    - "pg_hba.conf"
-    - "postgresql.conf"
-  when: app_fightfor_graphql.is_vagrant is defined and app_fightfor_graphql.is_vagrant == True
 
 - name: Install system-level Python dependencies
   pip:
