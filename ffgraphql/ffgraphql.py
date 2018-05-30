@@ -45,7 +45,8 @@ def main(filename_config_file=None):
         sql_password=cfg.sql_password,
         sql_host=cfg.sql_host,
         sql_port=cfg.sql_port,
-        sql_db=cfg.sql_db
+        sql_db=cfg.sql_db,
+        sql_engine_echo=cfg.logger_level == "DEBUG",
     )
 
     scoped_session = sqlalchemy.orm.scoped_session(dal.session_factory)
