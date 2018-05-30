@@ -118,6 +118,17 @@
   become_user: "{{ app_fightfor_graphql.user }}"
   when: app_fightfor_graphql.is_vagrant is not defined or app_fightfor_graphql.is_vagrant == False
 
+- name: Create Gunicorn configuration file (Production)
+  template:
+    src: "gunicorn_config.py.j2"
+    dest: "{{ app_fightfor_graphql.config_dir }}/gunicorn_config.py"
+    owner: "{{ app_fightfor_graphql.user }}"
+    group: "{{ app_fightfor_graphql.group }}"
+    mode: 0600
+  become: true
+  become_user: "{{ app_fightfor_graphql.user }}"
+  when: app_fightfor_graphql.is_vagrant is not defined or app_fightfor_graphql.is_vagrant == False
+
 - name: Install Python package requirements (Production)
   pip:
     chdir: "{{ app_fightfor_graphql.share_dir }}/src/"
