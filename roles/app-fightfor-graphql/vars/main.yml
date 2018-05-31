@@ -38,7 +38,7 @@ app_fightfor_graphql:
 
       # GraphiQL Settings.
       do_enable_graphiql: True
-      path_graphiql: "/home/vagrant/graphiql"
+      path_graphiql: "/home/vagrant/fightfor-graphql/graphiql"
 
     prod:
       # General Settings.
