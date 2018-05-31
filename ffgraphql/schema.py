@@ -1,95 +1,53 @@
 # coding=utf-8
 
-import datetime
-from typing import Union, List
-
 import graphene
-from fform.orm_ct import Study
-from fform.orm_ct import MeshTerm
 
-from ffgraphql.schema_types import TypeStudy
-from ffgraphql.schema_types import TypeAlias
-from ffgraphql.schema_types import TypeSponsor
-from ffgraphql.schema_types import TypeMeshTerm
-from ffgraphql.schema_types import TypeStudyStats
+from ffgraphql.types.studies import StudyType
+from ffgraphql.types.studies import StudiesType
+from ffgraphql.types.descriptors import DescriptorType
+from ffgraphql.types.descriptors import DescriptorsType
+from ffgraphql.types.studies_stats import TypeCountStudiesCountry
+from ffgraphql.types.studies_stats import TypeStudiesStats
 
 
 class Query(graphene.ObjectType):
 
-    study = graphene.Field(
-        type=TypeStudy,
-        description="A clinical-trial study",
-        nct_id=graphene.Argument(type=graphene.String, required=True),
-    )
-
-    studies = graphene.List(
-        of_type=TypeStudy,
-        description="A list of clinical-trial studies",
-        mesh_terms=graphene.Argument(
-            type=graphene.List(of_type=graphene.String),
-            required=False
-        ),
-        year_beg=graphene.Argument(type=graphene.Int, required=False),
-        year_end=graphene.Argument(type=graphene.Int, required=False),
-    )
-
-    study_stats = graphene.Field(
-        type=TypeStudyStats,
+    studies_stats = graphene.Field(
+        type=TypeStudiesStats,
         description="Clinical-trial study-related statistics."
     )
 
-    @staticmethod
-    def resolve_study(
-        args,
-        info,
-        nct_id: str
-    ):
-        query = TypeStudy.get_query(info=info)
-        query = query.filter(Study.nct_id == nct_id)
+    studies = graphene.Field(
+        type=StudiesType,
+        description="Clinical-trials studies.",
+    )
 
-        obj = query.first()
-
-        return obj
+    descriptors = graphene.Field(
+        type=DescriptorsType,
+        description="MeSH descriptors.",
+    )
 
     @staticmethod
-    def resolve_studies(
-        args,
-        info,
-        mesh_terms: Union[List[str], None] = None,
-        year_beg: Union[int, None] = None,
-        year_end: Union[int, None] = None,
-    ):
-        query = TypeStudy.get_query(info=info)
-
-        if mesh_terms:
-            query = query.filter(MeshTerm.term.in_(mesh_terms))
-
-        if year_beg:
-            query = query.filter(
-                Study.start_date >= datetime.date(year_beg, 1, 1)
-            )
-
-        if year_end:
-            query = query.filter(
-                Study.start_date <= datetime.date(year_end, 12, 31)
-            )
-
-        objs = query.all()
-
-        return objs
+    def resolve_studies_stats(args, info):
+        return TypeStudiesStats
 
     @staticmethod
-    def resolve_study_stats(args, info):
-        return TypeStudyStats
+    def resolve_studies(args, info):
+        return StudiesType
+
+    @staticmethod
+    def resolve_descriptors(args, info):
+        return DescriptorsType
 
 
 schema = graphene.Schema(
     query=Query,
     types=[
-        TypeStudy,
-        TypeAlias,
-        TypeSponsor,
-        TypeMeshTerm,
-        TypeStudyStats,
+        StudyType,
+        StudiesType,
+        DescriptorType,
+        DescriptorsType,
+        TypeCountStudiesCountry,
+        TypeStudiesStats,
     ]
 )

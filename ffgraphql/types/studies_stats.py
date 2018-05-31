@@ -2,36 +2,12 @@
 
 from typing import List
 
-import graphene
-from graphene_sqlalchemy import SQLAlchemyObjectType
 import sqlalchemy.orm
+import graphene
 from sqlalchemy import func as sqlalchemy_func
 from fform.orm_ct import Study
-from fform.orm_ct import Alias
-from fform.orm_ct import Sponsor
-from fform.orm_ct import MeshTerm
 from fform.orm_ct import Location
 from fform.orm_ct import Facility
-
-
-class TypeStudy(SQLAlchemyObjectType):
-    class Meta:
-        model = Study
-
-
-class TypeAlias(SQLAlchemyObjectType):
-    class Meta:
-        model = Alias
-
-
-class TypeSponsor(SQLAlchemyObjectType):
-    class Meta:
-        model = Sponsor
-
-
-class TypeMeshTerm(SQLAlchemyObjectType):
-    class Meta:
-        model = MeshTerm
 
 
 class TypeCountStudiesCountry(graphene.ObjectType):
@@ -45,7 +21,7 @@ class TypeCountStudiesCountry(graphene.ObjectType):
     count_studies = graphene.Int(description="The number of studies.")
 
 
-class TypeStudyStats(graphene.ObjectType):
+class TypeStudiesStats(graphene.ObjectType):
 
     count_studies_by_country = graphene.List(
         of_type=TypeCountStudiesCountry
@@ -53,10 +29,21 @@ class TypeStudyStats(graphene.ObjectType):
 
     @staticmethod
     def resolve_count_studies_by_country(
-        args,
-        info
+        args: dict,
+        info: graphene.ResolveInfo,
     ) -> List[TypeCountStudiesCountry]:
-        """"""
+        """Creates a list of `TypeCountStudiesCountry` objects with the number
+        of clinical-trial studies per country.
+
+        Args:
+            args (dict): The resolver arguments.
+            info (graphene.ResolveInfo): The resolver info.
+
+        Returns:
+             list[TypeCountStudiesCountry]: The list of
+                `TypeCountStudiesCountry` objects with the results of the
+                aggregation.
+        """
 
         # Retrieve the session out of the context as the `get_query` method
         # automatically selects the model.
