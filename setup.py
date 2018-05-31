@@ -5,13 +5,15 @@
 
 from setuptools import setup, find_packages
 
-with open('README.rst') as readme_file:
+with open('README.md') as readme_file:
     readme = readme_file.read()
 
-with open('HISTORY.rst') as history_file:
+with open('CHANGELOG.md') as history_file:
     history = history_file.read()
 
-requirements = [ ]
+requirements = [
+    
+]
 
 setup_requirements = ['pytest-runner', ]
 
@@ -31,7 +33,8 @@ setup(
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
     ],
-    description="A GraphQL API over the SQLAlchemy ORM serving the project data via Flask.",
+    description=("A GraphQL API over the SQLAlchemy ORM serving the project "
+                 "data via Falcon."),
     install_requires=requirements,
     long_description=readme + '\n\n' + history,
     include_package_data=True,
