@@ -10,6 +10,7 @@ from ffgraphql import config
 from ffgraphql import excs
 from ffgraphql import loggers
 from ffgraphql import schema
+from ffgraphql import types
 from ffgraphql import resources
 from ffgraphql import api
 from ffgraphql import ffgraphql
