@@ -6,8 +6,8 @@ from ffgraphql.types.studies import StudyType
 from ffgraphql.types.studies import StudiesType
 from ffgraphql.types.descriptors import DescriptorType
 from ffgraphql.types.descriptors import DescriptorsType
-from ffgraphql.types.study_stats import TypeCountStudiesCountry
-from ffgraphql.types.study_stats import TypeStudiesStats
+from ffgraphql.types.studies_stats import TypeCountStudiesCountry
+from ffgraphql.types.studies_stats import TypeStudiesStats
 
 
 class Query(graphene.ObjectType):
