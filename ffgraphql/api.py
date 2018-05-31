@@ -9,7 +9,7 @@ from ffgraphql.resources import ResourceGraphQlSqlAlchemy
 from ffgraphql.resources import ResourceGraphiQL
 
 
-def create_app(
+def create_api(
     schema: graphene.Schema,
     scoped_session: sqlalchemy.orm.scoped_session,
     do_enable_graphiql: bool,

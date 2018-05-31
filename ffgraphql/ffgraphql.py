@@ -9,7 +9,7 @@ import sqlalchemy.orm
 from fform.dal_base import DalBase
 
 from ffgraphql.config import import_config
-from ffgraphql.api import create_app
+from ffgraphql.api import create_api
 from ffgraphql.schema import schema
 
 
@@ -51,14 +51,15 @@ def main(filename_config_file=None):
 
     scoped_session = sqlalchemy.orm.scoped_session(dal.session_factory)
 
-    app = create_app(
+    api = create_api(
         schema=schema,
         scoped_session=scoped_session,
-        do_enable_graphiql=True if cfg.logger_level == "DEBUG" else False,
+        do_enable_graphiql=cfg.do_enable_graphiql,
+        path_graphiql=cfg.path_graphiql,
         logger_level=cfg.logger_level,
     )
 
-    return app
+    return api
 
 
 # main sentinel
