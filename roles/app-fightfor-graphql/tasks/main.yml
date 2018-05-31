@@ -133,7 +133,7 @@
   pip:
     chdir: "{{ app_fightfor_graphql.share_dir }}/src/"
     requirements: requirements.txt
-    state: present
+    state: latest
     virtualenv: "{{ app_fightfor_graphql.virtual_env_dir }}"
     virtualenv_python: python2.7
   when: app_fightfor_graphql.is_vagrant is not defined or app_fightfor_graphql.is_vagrant == False
@@ -144,7 +144,7 @@
   pip:
     chdir: "/home/vagrant/fightfor-graphql"
     requirements: requirements_dev.txt
-    state: present
+    state: latest
     virtualenv: "{{ app_fightfor_graphql.virtual_env_dir }}"
     virtualenv_python: python2.7
   when: app_fightfor_graphql.is_vagrant is defined and app_fightfor_graphql.is_vagrant == True
