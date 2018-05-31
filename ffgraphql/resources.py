@@ -1,13 +1,16 @@
 # coding=utf-8
 
+import os
 from os import devnull
-
 import functools
 from collections import OrderedDict
 from contextlib import redirect_stdout
 import json
+
+import graphene
 import falcon
 
+from ffgraphql.loggers import create_logger
 from ffgraphql.excs import UnhandledError
 
 
@@ -35,31 +38,37 @@ class ResourceGraphQl:
 
     def __init__(
         self,
-        schema,
+        schema: graphene.Schema,
     ):
 
         # Internalize arguments.
         self.schema = schema
 
-        self._respond_invalid_method = functools.partialmethod(
+        # Create logger.
+        self.logger = create_logger(
+            logger_name=type(self).__name__,
+            logger_level="DEBUG"
+        )
+
+        self._respond_invalid_method = functools.partial(
             self._respond_error,
             status=falcon.HTTP_405,
             message="GraphQL only supports GET and POST requests.",
         )
 
-        self._respond_no_query = functools.partialmethod(
+        self._respond_no_query = functools.partial(
             self._respond_error,
             status=falcon.HTTP_400,
             message="Must provide query string.",
         )
 
-        self._responsd_invalid_variables = functools.partialmethod(
+        self._respond_invalid_variables = functools.partial(
             self._respond_error,
             status=falcon.HTTP_400,
             message="Variables are invalid JSON.",
         )
 
-        self._respond_invalid_body = functools.partialmethod(
+        self._respond_invalid_body = functools.partial(
             self._respond_error,
             status=falcon.HTTP_400,
             message="POST body sent invalid JSON.",
@@ -193,31 +202,42 @@ class ResourceGraphQl:
                 return self._respond_invalid_body(resp=resp)
 
             # build the query string (Graph Query Language string)
-            if (query is None and req.context['post_data'] and
-                    'query' in req.context['post_data']):
+            if (
+                query is None and req.context['post_data'] and
+                'query' in req.context['post_data']
+            ):
                 query = str(req.context['post_data']['query'])
             elif query is None:
                 return self._respond_no_query(resp=resp)
 
             # build the variables string (JSON string of key/value pairs)
-            if (variables is None and req.context['post_data'] and
-                    'variables' in req.context['post_data'] and
-                    req.context['post_data']['variables']):
-                variables = str(req.context['post_data']['variables'])
+            if (
+                variables is None and
+                req.context['post_data'] and
+                'variables' in req.context['post_data'] and
+                req.context['post_data']['variables']
+            ):
                 try:
-                    json_str = str(req.context['post_data']['variables'])
-                    variables = json.loads(json_str,
-                                           object_pairs_hook=OrderedDict)
+                    variables = req.context['post_data']['variables']
+                    if not isinstance(variables, OrderedDict):
+                        json_str = str(req.context['post_data']['variables'])
+                        variables = json.loads(
+                            json_str,
+                            object_pairs_hook=OrderedDict
+                        )
                 except json.decoder.JSONDecodeError:
+                    self.logger.exception(variables)
                     return self._respond_invalid_variables(resp=resp)
 
             elif variables is None:
                 variables = ""
 
             # build the operationName string (matches a query or mutation name)
-            if (operation_name is None and
-                    'operationName' in req.context['post_data'] and
-                    req.context['post_data']['operationName']):
+            if (
+                operation_name is None and
+                'operationName' in req.context['post_data'] and
+                req.context['post_data']['operationName']
+            ):
                 operation_name = str(req.context['post_data']['operationName'])
 
         # Alternately, handle 'content-type: application/graphql' requests
@@ -291,7 +311,6 @@ class ResourceGraphQlSqlAlchemy(ResourceGraphQl):
         schema,
         scoped_session,
     ):
-
         # Internalize arguments.
         self.scoped_session = scoped_session
 
@@ -303,12 +322,14 @@ class ResourceGraphQlSqlAlchemy(ResourceGraphQl):
         variable_values,
         operation_name=None,
     ):
+        msg_fmt = "Executing query: {} with variables".format(query)
+        self.logger.debug(msg_fmt)
 
         result = self.schema.execute(
             query,
             variable_values=variable_values,
             operation_name=operation_name,
-            context={"session": self.scoped_session}
+            context_value={"session": self.scoped_session}
         )
 
         return result
@@ -316,6 +337,13 @@ class ResourceGraphQlSqlAlchemy(ResourceGraphQl):
 
 class ResourceGraphiQL(object):
     """Serves GraphiQL dashboard. Meant to be used during development only."""
+
+    def __init__(
+        self,
+        path_graphiql,
+    ):
+
+        self.path_graphiql = path_graphiql
 
     def on_get(self, req, resp, static_file=None):
         """Handles GraphiQL GET requests."""
@@ -329,4 +357,4 @@ class ResourceGraphiQL(object):
             resp.content_type = 'application/javascript; charset=UTF-8'
 
         resp.status = falcon.HTTP_200
-        resp.stream = open('graphiql/' + static_file, 'rb')
+        resp.stream = open(os.path.join(self.path_graphiql, static_file), 'rb')
