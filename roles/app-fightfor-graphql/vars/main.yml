@@ -35,6 +35,11 @@ app_fightfor_graphql:
       sql_username: "ffgraphql"
       sql_password: "zI7indC309irKG8S76BQnGScKo0fDpdPC84rroMA"
       sql_db: "fightfor"
+
+      # GraphiQL Settings.
+      do_enable_graphiql: True
+      path_graphiql: "/home/vagrant/graphiql"
+
     prod:
       # General Settings.
       logger_level: INFO
@@ -45,3 +50,7 @@ app_fightfor_graphql:
       sql_username: "ffgraphql"
       sql_password: "zI7indC309irKG8S76BQnGScKo0fDpdPC84rroMA"
       sql_db: "fightfor"
+
+      # GraphiQL Settings.
+      do_enable_graphiql: False
+      path_graphiql:
