@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import hashlib
 import datetime
 from typing import Union, List
 
@@ -27,7 +28,7 @@ class StudiesType(graphene.ObjectType):
         of_type=StudyType,
         description=("Retrieve a list of clinical-trial studies matching "
                      "several filters."),
-        mesh_terms=graphene.Argument(
+        mesh_descriptors=graphene.Argument(
             type=graphene.List(of_type=graphene.String),
             required=False
         ),
@@ -69,7 +70,7 @@ class StudiesType(graphene.ObjectType):
     def resolve_search(
         args: dict,
         info: graphene.ResolveInfo,
-        mesh_terms: Union[List[str], None] = None,
+        mesh_descriptors: Union[List[str], None] = None,
         year_beg: Union[int, None] = None,
         year_end: Union[int, None] = None,
     ):
@@ -79,8 +80,8 @@ class StudiesType(graphene.ObjectType):
         Args:
             args (dict): The resolver arguments.
             info (graphene.ResolveInfo): The resolver info.
-            mesh_terms (list[str], optional): A list of MeSH descriptor names
-                tagged against the study.
+            mesh_descriptors (list[str], optional): A list of MeSH descriptor
+                names tagged against the study.
             year_beg (int, optional): The minimum year the start date of a
                 matched `StudyModel` may have.
             year_end (int, optional): The maximum year the start date of a
@@ -93,14 +94,22 @@ class StudiesType(graphene.ObjectType):
 
         query = StudyType.get_query(info=info)
 
-        if mesh_terms:
-            query = query.filter(MeshTermModel.term.in_(mesh_terms))
+        # Filter studies by associated mesh-descriptors.
+        if mesh_descriptors:
+            # Calculate the MD5 hashes for the defined descriptors.
+            mesh_descriptor_md5s = [
+                hashlib.md5(descriptor.encode("utf-8")).digest()
+                for descriptor in mesh_descriptors
+            ]
+            # Filter studies by descriptor MD5 hashes.
+            query = query.join(StudyModel.mesh_terms)
+            query = query.filter(MeshTermModel.md5.in_(mesh_descriptor_md5s))
 
+        # Filter studies the year of their start-date.
         if year_beg:
             query = query.filter(
                 StudyModel.start_date >= datetime.date(year_beg, 1, 1)
             )
-
         if year_end:
             query = query.filter(
                 StudyModel.start_date <= datetime.date(year_end, 12, 31)
