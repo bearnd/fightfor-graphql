@@ -14,6 +14,11 @@ class DescriptorType(SQLAlchemyObjectType):
         model = DescriptorModel
 
 
+class TreeNumberType(SQLAlchemyObjectType):
+    class Meta:
+        model = TreeNumberModel
+
+
 class DescriptorsType(graphene.ObjectType):
 
     by_ui = graphene.Field(

@@ -6,6 +6,7 @@ from ffgraphql.types.studies import StudyType
 from ffgraphql.types.studies import StudiesType
 from ffgraphql.types.descriptors import DescriptorType
 from ffgraphql.types.descriptors import DescriptorsType
+from ffgraphql.types.descriptors import TreeNumberType
 from ffgraphql.types.studies_stats import TypeCountStudiesCountry
 from ffgraphql.types.studies_stats import TypeStudiesStats
 
@@ -49,5 +50,6 @@ schema = graphene.Schema(
         DescriptorsType,
         TypeCountStudiesCountry,
         TypeStudiesStats,
+        TreeNumberType,
     ]
 )
