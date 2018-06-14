@@ -1,12 +1,15 @@
 # coding=utf-8
 
-from typing import List
+from typing import List, Dict, Union
 
 import sqlalchemy.orm
+from sqlalchemy import func as sqlalchemy_func
 import graphene
 from graphene_sqlalchemy import SQLAlchemyObjectType
+
 from fform.orm_mt import Descriptor as DescriptorModel
 from fform.orm_mt import TreeNumber as TreeNumberModel
+from fform.orm_mt import DescriptorSynonym as DescriptorSynonymModel
 
 
 class DescriptorType(SQLAlchemyObjectType):
@@ -35,6 +38,20 @@ class DescriptorsType(graphene.ObjectType):
             type=graphene.String,
             required=True,
         ),
+    )
+
+    by_synonym = graphene.List(
+        of_type=DescriptorType,
+        description=("Retrieve a list of MeSH descriptors fuzzy-matching a "
+                     "synonym."),
+        synonym=graphene.Argument(
+            type=graphene.String,
+            required=True,
+        ),
+        limit=graphene.Argument(
+            type=graphene.Int,
+            required=False,
+        )
     )
 
     @staticmethod
@@ -101,5 +118,52 @@ class DescriptorsType(graphene.ObjectType):
 
         objs = query.all()
         print(objs)
+
+        return objs
+
+    @staticmethod
+    def resolve_by_synonym(
+        args: Dict,
+        info: graphene.ResolveInfo,
+        synonym: str,
+        limit: Union[int, None] = None,
+    ) -> List[DescriptorModel]:
+        """Retrieves a list of `DescriptorModel` objects with a tree-number
+        prefix-matching `tree_number_prefix`.
+
+        Args:
+            args (dict): The resolver arguments.
+            info (graphene.ResolveInfo): The resolver info.
+            synonym (str): The synonym query by which to perform the search.
+            limit (int, optional): The number of closest-matching descriptors
+                to return. Defaults to `None`.
+
+        Returns:
+             list[DescriptorModel]: The list of matched `DescriptorModel`
+                objects or an empty list if no match was found.
+        """
+
+        # Retrieve the session out of the context as the `get_query` method
+        # automatically selects the model.
+        session = info.context.get("session")  # type: sqlalchemy.orm.Session
+
+        # Define a function to calculate the maximum similarity between a
+        # descriptor's synonyms and the synonym query.
+        func_similarity = sqlalchemy_func.max(sqlalchemy_func.similarity(
+            DescriptorSynonymModel.synonym,
+            synonym,
+        )).label("synonym_similarity")
+
+        # Query out `DescriptorModel`.
+        query = session.query(DescriptorModel)  # type: sqlalchemy.orm.Query
+        query = query.join(DescriptorModel.synonyms)
+        query = query.filter(DescriptorSynonymModel.synonym.op("%%")(synonym))
+        query = query.order_by(func_similarity.desc())
+        query = query.group_by(DescriptorModel.descriptor_id)
+
+        if limit is not None:
+            query = query.limit(limit=limit)
+
+        objs = query.all()
 
         return objs
