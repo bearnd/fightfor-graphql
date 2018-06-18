@@ -13,6 +13,7 @@ validictory==1.1.1
 attrdict==2.0.0
 falcon==1.4.1
 git+http://gitlab-ci-token:YGVQHuviVKnqbJ1SyAXd@sunny.diskstation.me:30000/bearnd/fightfor-orm.git#egg=fform
+graphql-core==2.0
 snapshottest==0.5.0
 pytest==3.6.0
 pytest-runner==4.2
