@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from typing import List, Dict, Union, Type
+from typing import List, Dict, Union, Type, Optional
 
 import graphql
 from graphql.language.ast import FragmentSpread
@@ -95,7 +95,8 @@ def extract_requested_fields(
 def apply_requested_fields(
     info: graphql.execution.base.ResolveInfo,
     query: sqlalchemy.orm.Query,
-    orm_class: Type[OrmBase]
+    orm_class: Type[OrmBase],
+    fields: Optional[Dict[str, None]] = None,
 ) -> sqlalchemy.orm.Query:
     """Updates the SQLAlchemy Query object by limiting the loaded fields of the
     table and its relationship to the ones explicitly requested in the GraphQL
@@ -113,17 +114,21 @@ def apply_requested_fields(
             to the resolver function.
         query (sqlalchemy.orm.Query): The SQLAlchemy Query object to be updated.
         orm_class (Type[OrmBaseMixin]): The ORM class of the selected table.
+        fields (Optional[Dict[str, None]]): Pre-extracted requested fields. If
+            provided extraction is skipped.
 
     Returns:
         sqlalchemy.orm.Query: The updated SQLAlchemy Query object.
     """
 
-    # Extract the fields requested in the GraphQL query.
-    fields = extract_requested_fields(
-        info=info,
-        fields=info.field_asts,
-        do_convert_to_snake_case=True,
-    )
+    # Extract the fields requested in the GraphQL query unless they were
+    # provided.
+    if not fields:
+        fields = extract_requested_fields(
+            info=info,
+            fields=info.field_asts,
+            do_convert_to_snake_case=True,
+        )
 
     # We assume that the top level of the `fields` dictionary only contains a
     # single key referring to the GraphQL resource being resolved.

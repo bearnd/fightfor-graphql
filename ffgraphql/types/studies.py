@@ -13,7 +13,6 @@ from fform.orm_ct import MeshTerm as MeshTermModel
 from fform.orm_mt import Descriptor as DescriptorModel
 from fform.orm_mt import TreeNumber as TreeNumberModel
 
-from ffgraphql.utils import extract_requested_fields
 from ffgraphql.utils import apply_requested_fields
 
 
@@ -135,7 +134,7 @@ class StudiesType(graphene.ObjectType):
             query_descs = query_descs.filter(
                 TreeNumberModel.tree_number.like(
                     sqlalchemy.any_(postgresql.array(
-                        ["{}%".format(tn) for tn in tree_numbers]
+                        tuple(["{}%".format(tn) for tn in tree_numbers])
                     ))
                 )
             )
