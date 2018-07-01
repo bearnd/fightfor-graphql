@@ -33,6 +33,18 @@ class TypeCountStudiesOverallStatus(graphene.ObjectType):
     count_studies = graphene.Int(description="The number of studies.")
 
 
+class TypeCountStudiesFacility(graphene.ObjectType):
+    """Graphene type representing a single result of an aggregation operation
+    calculating the number of clinical-trial studies by facility."""
+
+    facility = graphene.Field(
+        type=FacilityType,
+        description="The facility in which the studies are performed."
+    )
+
+    count_studies = graphene.Int(description="The number of studies.")
+
+
 class TypeStudiesStats(graphene.ObjectType):
 
     count_studies_by_country = graphene.List(
