@@ -1,8 +1,6 @@
 # coding=utf-8
 
-import hashlib
-import datetime
-from typing import Union, List
+from typing import List
 
 import sqlalchemy.orm
 import graphene
@@ -10,7 +8,6 @@ from sqlalchemy import func as sqlalchemy_func
 from fform.orm_ct import Study as StudyModel
 from fform.orm_ct import Location as LocationModel
 from fform.orm_ct import Facility as FacilityModel
-from fform.orm_ct import MeshTerm as MeshTermModel
 from fform.orm_ct import OverallStatusType as OverallStatusEnum
 
 
