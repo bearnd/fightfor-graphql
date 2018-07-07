@@ -30,6 +30,15 @@ class StudiesType(graphene.ObjectType):
         ),
     )
 
+    by_id = graphene.List(
+        of_type=StudyType,
+        description="Retrieve clinical-trial studies through their IDs.",
+        study_ids=graphene.Argument(
+            type=graphene.List(of_type=graphene.Int),
+            required=True,
+        ),
+    )
+
     search = graphene.List(
         of_type=StudyType,
         description=("Retrieve a list of clinical-trial studies matching "
@@ -73,6 +82,44 @@ class StudiesType(graphene.ObjectType):
 
         # Filter to the `StudyModel` records matching any of the `nct_ids`.
         query = query.filter(StudyModel.nct_id.in_(nct_ids))
+
+        # Limit query to fields requested in the GraphQL query.
+        query = apply_requested_fields(
+            info=info,
+            query=query,
+            orm_class=StudyModel,
+        )
+
+        objs = query.all()
+
+        return objs
+
+    @staticmethod
+    def resolve_by_id(
+        args: dict,
+        info: graphene.ResolveInfo,
+        study_ids: List[int],
+    ) -> List[StudyModel]:
+        """Retrieves `StudyModel` record objects through their IDs.
+
+        Args:
+            args (dict): The resolver arguments.
+            info (graphene.ResolveInfo): The resolver info.
+            study_ids (List[str]): The IDs for which `StudyModel` record
+                objects will be retrieved.
+
+        Returns:
+             List[StudyModel]: The retrieved `StudyModel` record objects or an
+                empty list if no matches were found.
+        """
+
+        # Retrieve the query on `StudyModel`.
+        query = StudyType.get_query(
+            info=info,
+        )  # type: sqlalchemy.orm.query.Query
+
+        # Filter to the `StudyModel` records matching any of the `study_ids`.
+        query = query.filter(StudyModel.study_id.in_(study_ids))
 
         # Limit query to fields requested in the GraphQL query.
         query = apply_requested_fields(
