@@ -322,7 +322,8 @@ class ResourceGraphQlSqlAlchemy(ResourceGraphQl):
         variable_values,
         operation_name=None,
     ):
-        msg_fmt = "Executing query: {} with variables".format(query)
+        msg = "Executing query: {} with variables {}"
+        msg_fmt = msg.format(query, variable_values)
         self.logger.debug(msg_fmt)
 
         result = self.schema.execute(
