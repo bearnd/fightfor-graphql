@@ -134,10 +134,11 @@ def apply_requested_fields(
     # single key referring to the GraphQL resource being resolved.
     tl_key = list(fields.keys())[0]
     # We assume that any keys that have a value of `None` (as opposed to
-    # dictionaries) are fields of the primary table.
+    # dictionaries) are fields of the primary table. In addition, any keys that
+    # start with `__` are typically added by the GraphQL client and omitted.
     table_fields = [
         key for key, val in fields[tl_key].items()
-        if val is None
+        if (val is None and not key.startswith("__"))
     ]
 
     # We assume that any keys that have a value being a dictionary are

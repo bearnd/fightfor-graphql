@@ -1,6 +1,5 @@
 # coding=utf-8
 
-import hashlib
 import datetime
 from typing import Union, List
 
@@ -22,10 +21,13 @@ class StudyType(SQLAlchemyObjectType):
 
 
 class StudiesType(graphene.ObjectType):
-    by_nct_id = graphene.Field(
-        type=StudyType,
-        description="Retrieve a clinical-trial study through its NCT ID.",
-        nct_id=graphene.Argument(type=graphene.String, required=True),
+    by_nct_id = graphene.List(
+        of_type=StudyType,
+        description="Retrieve clinical-trial studies through their NCT IDs.",
+        nct_ids=graphene.Argument(
+            type=graphene.List(of_type=graphene.String),
+            required=True,
+        ),
     )
 
     search = graphene.List(
@@ -49,18 +51,19 @@ class StudiesType(graphene.ObjectType):
     def resolve_by_nct_id(
         args: dict,
         info: graphene.ResolveInfo,
-        nct_id: str
-    ) -> StudyModel:
-        """Retrieves a `StudyModel` object through its NCT ID.
+        nct_ids: List[str],
+    ) -> List[StudyModel]:
+        """Retrieves `StudyModel` record objects through their NCT IDs.
 
         Args:
             args (dict): The resolver arguments.
             info (graphene.ResolveInfo): The resolver info.
-            nct_id (str): The NCT ID of the `StudyModel` to retrieve.
+            nct_ids (List[str]): The NCT IDs for which `StudyModel` record
+                objects will be retrieved.
 
         Returns:
-             StudyModel: The retrieved `StudyModel` object or `None`
-                if no match was not found.
+             List[StudyModel]: The retrieved `StudyModel` record objects or an
+                empty list if no matches were found.
         """
 
         # Retrieve the query on `StudyModel`.
@@ -68,12 +71,19 @@ class StudiesType(graphene.ObjectType):
             info=info,
         )  # type: sqlalchemy.orm.query.Query
 
-        # Filter to the `StudyModel` record matching `nct_id`.
-        query = query.filter(StudyModel.nct_id == nct_id)
+        # Filter to the `StudyModel` records matching any of the `nct_ids`.
+        query = query.filter(StudyModel.nct_id.in_(nct_ids))
 
-        obj = query.first()
+        # Limit query to fields requested in the GraphQL query.
+        query = apply_requested_fields(
+            info=info,
+            query=query,
+            orm_class=StudyModel,
+        )
 
-        return obj
+        objs = query.all()
+
+        return objs
 
     @staticmethod
     def resolve_search(
@@ -158,14 +168,8 @@ class StudiesType(graphene.ObjectType):
         query = session.query(StudyModel)
 
         # Filter studies by associated mesh-descriptors.
-        # Calculate the MD5 hashes for the defined descriptors.
-        mesh_descriptor_md5s = [
-            hashlib.md5(descriptor_name.encode("utf-8")).digest()
-            for descriptor_name in descriptor_names
-        ]
-        # Filter studies by descriptor MD5 hashes.
         query = query.join(StudyModel.mesh_terms)
-        query = query.filter(MeshTermModel.md5.in_(mesh_descriptor_md5s))
+        query = query.filter(MeshTermModel.term.in_(descriptor_names))
 
         # Filter studies the year of their start-date.
         if year_beg:
