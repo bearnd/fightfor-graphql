@@ -121,6 +121,9 @@ class TypeStudiesStats(graphene.ObjectType):
         )
         # Group by study overall-status.
         query = query.group_by(FacilityModel.country)
+        # Order by the number of studies.
+        query = query.order_by(func_count_studies.desc())
+
         # Apply limit (if defined).
         if limit:
             query = query.limit(limit=limit)
@@ -176,6 +179,9 @@ class TypeStudiesStats(graphene.ObjectType):
         query = query.filter(StudyModel.study_id.in_(study_ids))
         # Group by study overall-status.
         query = query.group_by(StudyModel.overall_status)
+        # Order by the number of studies.
+        query = query.order_by(func_count_studies.desc())
+
         # Apply limit (if defined).
         if limit:
             query = query.limit(limit=limit)
@@ -236,6 +242,8 @@ class TypeStudiesStats(graphene.ObjectType):
         )
         # Group by study facility.
         query = query.group_by(FacilityModel.facility_id)
+        # Order by the number of studies.
+        query = query.order_by(func_count_studies.desc())
 
         # Extract the fields requested in the GraphQL query.
         fields = extract_requested_fields(
