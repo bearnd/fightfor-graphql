@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from typing import List
+from typing import List, Optional
 
 import sqlalchemy.orm
 import graphene
@@ -57,6 +57,7 @@ class TypeStudiesStats(graphene.ObjectType):
             type=graphene.List(of_type=graphene.Int),
             required=True
         ),
+        limit=graphene.Argument(type=graphene.Int, required=False),
     )
 
     count_studies_by_overall_status = graphene.List(
@@ -65,6 +66,7 @@ class TypeStudiesStats(graphene.ObjectType):
             type=graphene.List(of_type=graphene.Int),
             required=True
         ),
+        limit=graphene.Argument(type=graphene.Int, required=False),
     )
 
     count_studies_by_facility = graphene.List(
@@ -73,6 +75,7 @@ class TypeStudiesStats(graphene.ObjectType):
             type=graphene.List(of_type=graphene.Int),
             required=True
         ),
+        limit=graphene.Argument(type=graphene.Int, required=False),
     )
 
     @staticmethod
@@ -80,6 +83,7 @@ class TypeStudiesStats(graphene.ObjectType):
         args: dict,
         info: graphene.ResolveInfo,
         study_ids: List[int],
+        limit: Optional[int] = None,
     ) -> List[TypeCountStudiesCountry]:
         """Creates a list of `TypeCountStudiesCountry` objects with the number
         of clinical-trial studies per country.
@@ -88,6 +92,8 @@ class TypeStudiesStats(graphene.ObjectType):
             args (dict): The resolver arguments.
             info (graphene.ResolveInfo): The resolver info.
             study_ids (List[int]): A list of Study IDs.
+            limit (Optional[int]): The number of results to return. Defaults to
+                `None` in which case all results are returned.
 
         Returns:
              list[TypeCountStudiesCountry]: The list of
@@ -115,6 +121,9 @@ class TypeStudiesStats(graphene.ObjectType):
         )
         # Group by study overall-status.
         query = query.group_by(FacilityModel.country)
+        # Apply limit (if defined).
+        if limit:
+            query = query.limit(limit=limit)
 
         results = query.all()
 
@@ -134,6 +143,7 @@ class TypeStudiesStats(graphene.ObjectType):
         args: dict,
         info: graphene.ResolveInfo,
         study_ids: List[int],
+        limit: Optional[int] = None,
     ) -> List[TypeCountStudiesOverallStatus]:
         """Creates a list of `TypeCountStudiesOverallStatus` objects with the
         number of clinical-trial studies per overall-status.
@@ -142,6 +152,8 @@ class TypeStudiesStats(graphene.ObjectType):
             args (dict): The resolver arguments.
             info (graphene.ResolveInfo): The resolver info.
             study_ids (List[int]): A list of Study IDs.
+            limit (Optional[int]): The number of results to return. Defaults to
+                `None` in which case all results are returned.
 
         Returns:
              list[TypeCountStudiesOverallStatus]: The list of
@@ -164,6 +176,9 @@ class TypeStudiesStats(graphene.ObjectType):
         query = query.filter(StudyModel.study_id.in_(study_ids))
         # Group by study overall-status.
         query = query.group_by(StudyModel.overall_status)
+        # Apply limit (if defined).
+        if limit:
+            query = query.limit(limit=limit)
 
         results = query.all()
 
@@ -183,6 +198,7 @@ class TypeStudiesStats(graphene.ObjectType):
         args: dict,
         info: graphene.ResolveInfo,
         study_ids: List[int],
+        limit: Optional[int] = None,
     ) -> List[TypeCountStudiesFacility]:
         """Creates a list of `TypeCountStudiesFacility` objects with the number
         of clinical-trial studies per facility.
@@ -191,6 +207,8 @@ class TypeStudiesStats(graphene.ObjectType):
             args (dict): The resolver arguments.
             info (graphene.ResolveInfo): The resolver info.
             study_ids (List[int]): A list of Study IDs.
+            limit (Optional[int]): The number of results to return. Defaults to
+                `None` in which case all results are returned.
 
         Returns:
              list[TypeCountStudiesFacility]: The list of
@@ -233,6 +251,10 @@ class TypeStudiesStats(graphene.ObjectType):
             orm_class=FacilityModel,
             fields={"facility": fields},
         )
+
+        # Apply limit (if defined).
+        if limit:
+            query = query.limit(limit=limit)
 
         results = query.all()
 
