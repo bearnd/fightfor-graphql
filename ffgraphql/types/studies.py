@@ -1,6 +1,5 @@
 # coding=utf-8
 
-import hashlib
 import datetime
 from typing import Union, List
 
@@ -158,14 +157,8 @@ class StudiesType(graphene.ObjectType):
         query = session.query(StudyModel)
 
         # Filter studies by associated mesh-descriptors.
-        # Calculate the MD5 hashes for the defined descriptors.
-        mesh_descriptor_md5s = [
-            hashlib.md5(descriptor_name.encode("utf-8")).digest()
-            for descriptor_name in descriptor_names
-        ]
-        # Filter studies by descriptor MD5 hashes.
         query = query.join(StudyModel.mesh_terms)
-        query = query.filter(MeshTermModel.md5.in_(mesh_descriptor_md5s))
+        query = query.filter(MeshTermModel.term.in_(descriptor_names))
 
         # Filter studies the year of their start-date.
         if year_beg:
