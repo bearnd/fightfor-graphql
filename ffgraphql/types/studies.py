@@ -1,14 +1,18 @@
 # coding=utf-8
 
 import datetime
-from typing import Union, List
+from typing import Union, List, Optional
 
+import sqlalchemy
 import sqlalchemy.orm
 from sqlalchemy.dialects import postgresql
 import graphene
 from graphene_sqlalchemy import SQLAlchemyObjectType
 from fform.orm_ct import Study as StudyModel
 from fform.orm_ct import MeshTerm as MeshTermModel
+from fform.orm_ct import Location as LocationModel
+from fform.orm_ct import OverallStatusType
+from fform.orm_ct import InterventionType
 from fform.orm_mt import Descriptor as DescriptorModel
 from fform.orm_mt import TreeNumber as TreeNumberModel
 
@@ -54,6 +58,43 @@ class StudiesType(graphene.ObjectType):
             required=False,
             default_value=True,
         )
+    )
+
+    filter = graphene.List(
+        of_type=StudyType,
+        description=("Retrieve a list of clinical-trial studies through "
+                     "dynamic filtering and sorting."),
+        study_ids=graphene.Argument(
+            type=graphene.List(of_type=graphene.Int),
+            required=True
+        ),
+        overallStatuses=graphene.Argument(
+            type=graphene.List(
+                of_type=graphene.Enum.from_enum(OverallStatusType),
+            ),
+            description="A list of overall statuses to filter by.",
+            required=False,
+        ),
+        cities=graphene.Argument(
+            type=graphene.List(of_type=graphene.String()),
+            description="A list of cities to filter by.",
+            required=False,
+        ),
+        states=graphene.Argument(
+            type=graphene.List(of_type=graphene.String()),
+            description="A list of states or regions to filter by.",
+            required=False,
+        ),
+        countries=graphene.Argument(
+            type=graphene.List(of_type=graphene.String()),
+            description="A list of countries to filter by.",
+            required=False,
+        ),
+        interventionTypes=graphene.Argument(
+            type=graphene.Enum.from_enum(InterventionType),
+            description="A list of intevention types to filter by.",
+            required=False,
+        ),
     )
 
     @staticmethod
@@ -234,6 +275,55 @@ class StudiesType(graphene.ObjectType):
             query=query,
             orm_class=StudyModel,
         )
+
+        objs = query.all()
+
+        return objs
+
+    @staticmethod
+    def resolve_filter(
+        args: dict,
+        info: graphene.ResolveInfo,
+        study_ids: List[int],
+        overallStatuses: Optional[List[OverallStatusType]] = None,
+        cities: Optional[List[str]] = None,
+        states: Optional[List[str]] = None,
+        countries: Optional[List[str]] = None,
+        # filters: Optional[List[Dict[str, Any]]] = None,
+        # order_by: Optional[List[str]] = None,
+        # order: Optional[List[OrderType]] = None,
+    ):
+
+        # Retrieve the session out of the context as the `get_query` method
+        # automatically selects the model.
+        session = info.context.get("session")  # type: sqlalchemy.orm.Session
+
+        query = session.query(StudyModel)
+
+        # Limit studies to those with one of the defined IDs.
+        query = query.filter(StudyModel.study_id.in_(study_ids))
+
+
+        if cities or states or countries:
+            query = query.join(StudyModel.locations)
+            query = query.join(LocationModel)
+
+        # for filter_data in filters:
+        #     # Should any of the fields requested in the `filters` not be defined
+        #     # raise an exception.
+        #     if not hasattr(StudyModel, filter_data["field"]):
+        #         msg = ("'Study' class has no attribute '{}' and cannot be "
+        #                "filtered by it.")
+        #         msg_fmt = msg.format(filter_data["field"])
+        #         raise graphql.GraphQLError(msg_fmt)
+        #
+        #     query = query.filter(filter_data["operator"](
+        #         getattr(StudyModel, filter_data["field"]),
+        #         filter_data["value"]
+        #     ))
+
+        # from IPython import embed
+        # embed()
 
         objs = query.all()
 
