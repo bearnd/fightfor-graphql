@@ -88,9 +88,18 @@ class TypeStudies(graphene.ObjectType):
             description="A list of countries to filter by.",
             required=False,
         ),
-        interventionTypes=graphene.Argument(
-            type=graphene.Enum.from_enum(InterventionType),
+        intervention_types=graphene.Argument(
+            type=graphene.List(
+                of_type=graphene.Enum.from_enum(EnumIntervention),
+            ),
             description="A list of intevention types to filter by.",
+            required=False,
+        ),
+        phases=graphene.Argument(
+            type=graphene.List(
+                of_type=graphene.Enum.from_enum(EnumPhase),
+            ),
+            description="A list of trial phases to filter by.",
             required=False,
         ),
     )
@@ -287,7 +296,8 @@ class TypeStudies(graphene.ObjectType):
         cities: Optional[List[str]] = None,
         states: Optional[List[str]] = None,
         countries: Optional[List[str]] = None,
-        # filters: Optional[List[Dict[str, Any]]] = None,
+        intervention_types: Optional[List[EnumIntervention]] = None,
+        phases: Optional[List[EnumPhase]] = None,
         # order_by: Optional[List[str]] = None,
         # order: Optional[List[OrderType]] = None,
     ):
@@ -301,27 +311,45 @@ class TypeStudies(graphene.ObjectType):
         # Limit studies to those with one of the defined IDs.
         query = query.filter(ModelStudy.study_id.in_(study_ids))
 
+        # Apply an overall-status filter if any are defined.
+        if overall_statuses:
+            _members = [
+                EnumOverallStatus.get_member(value=str(_status))
+                for _status in overall_statuses
+            ]
+            query = query.filter(ModelStudy.overall_status.in_(_members))
 
+        # Join to the study facility locations and apply filters if any such
+        # filters are defined.
         if cities or states or countries:
-            query = query.join(StudyModel.locations)
-            query = query.join(LocationModel)
+            query = query.join(ModelStudy.locations)
+            query = query.join(ModelLocation.facility)
+            if cities:
+                query = query.filter(ModelFacility.city.in_(cities))
+            if states:
+                query = query.filter(ModelFacility.state.in_(states))
+            if countries:
+                query = query.filter(ModelFacility.country.in_(countries))
 
-        # for filter_data in filters:
-        #     # Should any of the fields requested in the `filters` not be defined
-        #     # raise an exception.
-        #     if not hasattr(StudyModel, filter_data["field"]):
-        #         msg = ("'Study' class has no attribute '{}' and cannot be "
-        #                "filtered by it.")
-        #         msg_fmt = msg.format(filter_data["field"])
-        #         raise graphql.GraphQLError(msg_fmt)
-        #
-        #     query = query.filter(filter_data["operator"](
-        #         getattr(StudyModel, filter_data["field"]),
-        #         filter_data["value"]
-        #     ))
+        # Join to the study interventions and apply filters if any such filters
+        # are defined.
+        if intervention_types:
+            _members = [
+                EnumIntervention.get_member(value=str(_status))
+                for _status in intervention_types
+            ]
+            query = query.join(ModelStudy.interventions)
+            query = query.filter(
+                ModelIntervention.intervention_type.in_(_members)
+            )
 
-        # from IPython import embed
-        # embed()
+        # Apply an phase filter if any are defined.
+        if phases:
+            _members = [
+                EnumPhase.get_member(value=str(_status))
+                for _status in phases
+            ]
+            query = query.filter(ModelStudy.phase.in_(_members))
 
         objs = query.all()
 
