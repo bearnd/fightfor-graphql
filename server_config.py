@@ -5,7 +5,7 @@ gunicorn.SERVER_SOFTWARE = 'falcon_graphql_server'
 
 # set the socket to bind on (use 0.0.0.0 for bare deploy)
 # this can also be set programatically via the -b flag
-bind = 'localhost:5555'
+bind = '0.0.0.0:5555'
 
 # set the maximum number of pending transactions before an error is returned
 backlog = 8192
