@@ -5,12 +5,12 @@ from typing import List, Optional
 import sqlalchemy.orm
 import graphene
 from sqlalchemy import func as sqlalchemy_func
-from fform.orm_ct import Study as StudyModel
-from fform.orm_ct import Location as LocationModel
-from fform.orm_ct import Facility as FacilityModel
-from fform.orm_ct import OverallStatusType as OverallStatusEnum
 
-from ffgraphql.types.facilities import FacilityType
+from ffgraphql.types.ct_primitives import ModelStudy
+from ffgraphql.types.ct_primitives import ModelLocation
+from ffgraphql.types.ct_primitives import ModelFacility
+from ffgraphql.types.ct_primitives import TypeFacility
+from ffgraphql.types.ct_primitives import EnumOverallStatus
 from ffgraphql.utils import extract_requested_fields
 from ffgraphql.utils import apply_requested_fields
 
@@ -42,7 +42,7 @@ class TypeCountStudiesFacility(graphene.ObjectType):
     calculating the number of clinical-trial studies by facility."""
 
     facility = graphene.Field(
-        type=FacilityType,
+        type=TypeFacility,
         description="The facility in which the studies are performed."
     )
 
@@ -106,21 +106,21 @@ class TypeStudiesStats(graphene.ObjectType):
         session = info.context.get("session")  # type: sqlalchemy.orm.Session
 
         # Define the `COUNT(studies.study_id)` function.
-        func_count_studies = sqlalchemy_func.count(StudyModel.study_id)
+        func_count_studies = sqlalchemy_func.count(ModelStudy.study_id)
 
         # Query out the count of studies by country.
         query = session.query(
-            FacilityModel.country,
+            ModelFacility.country,
             func_count_studies,
         )  # type: sqlalchemy.orm.Query
-        query = query.join(StudyModel.locations)
-        query = query.filter(StudyModel.study_id.in_(study_ids))
+        query = query.join(ModelStudy.locations)
+        query = query.filter(ModelStudy.study_id.in_(study_ids))
         query = query.join(
-            FacilityModel,
-            LocationModel.facility_id == FacilityModel.facility_id
+            ModelFacility,
+            ModelLocation.facility_id == ModelFacility.facility_id
         )
         # Group by study overall-status.
-        query = query.group_by(FacilityModel.country)
+        query = query.group_by(ModelFacility.country)
         # Order by the number of studies.
         query = query.order_by(func_count_studies.desc())
 
@@ -169,16 +169,16 @@ class TypeStudiesStats(graphene.ObjectType):
         session = info.context.get("session")  # type: sqlalchemy.orm.Session
 
         # Define the `COUNT(studies.study_id)` function.
-        func_count_studies = sqlalchemy_func.count(StudyModel.study_id)
+        func_count_studies = sqlalchemy_func.count(ModelStudy.study_id)
 
         # Query out the count of studies by overall-status.
         query = session.query(
-            StudyModel.overall_status,
+            ModelStudy.overall_status,
             func_count_studies,
         )  # type: sqlalchemy.orm.Query
-        query = query.filter(StudyModel.study_id.in_(study_ids))
+        query = query.filter(ModelStudy.study_id.in_(study_ids))
         # Group by study overall-status.
-        query = query.group_by(StudyModel.overall_status)
+        query = query.group_by(ModelStudy.overall_status)
         # Order by the number of studies.
         query = query.order_by(func_count_studies.desc())
 
@@ -192,7 +192,7 @@ class TypeStudiesStats(graphene.ObjectType):
         # objects.
         objs = [
             TypeCountStudiesOverallStatus(
-                overall_status=OverallStatusEnum(result[0]).value,
+                overall_status=EnumOverallStatus(result[0]).value,
                 count_studies=result[1]
             ) for result in results
         ]
@@ -227,21 +227,21 @@ class TypeStudiesStats(graphene.ObjectType):
         session = info.context.get("session")  # type: sqlalchemy.orm.Session
 
         # Define the `COUNT(studies.study_id)` function.
-        func_count_studies = sqlalchemy_func.count(StudyModel.study_id)
+        func_count_studies = sqlalchemy_func.count(ModelStudy.study_id)
 
         # Query out the count of studies by facility.
         query = session.query(
-            FacilityModel,
+            ModelFacility,
             func_count_studies,
         )  # type: sqlalchemy.orm.Query
-        query = query.join(StudyModel.locations)
-        query = query.filter(StudyModel.study_id.in_(study_ids))
+        query = query.join(ModelStudy.locations)
+        query = query.filter(ModelStudy.study_id.in_(study_ids))
         query = query.join(
-            FacilityModel,
-            LocationModel.facility_id == FacilityModel.facility_id
+            ModelFacility,
+            ModelLocation.facility_id == ModelFacility.facility_id
         )
         # Group by study facility.
-        query = query.group_by(FacilityModel.facility_id)
+        query = query.group_by(ModelFacility.facility_id)
         # Order by the number of studies.
         query = query.order_by(func_count_studies.desc())
 
@@ -256,7 +256,7 @@ class TypeStudiesStats(graphene.ObjectType):
         query = apply_requested_fields(
             info=info,
             query=query,
-            orm_class=FacilityModel,
+            orm_class=ModelFacility,
             fields={"facility": fields},
         )
 

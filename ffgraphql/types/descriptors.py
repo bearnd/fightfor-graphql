@@ -5,33 +5,24 @@ from typing import List, Dict, Union
 import sqlalchemy.orm
 from sqlalchemy import func as sqlalchemy_func
 import graphene
-from graphene_sqlalchemy import SQLAlchemyObjectType
 
-from fform.orm_mt import Descriptor as DescriptorModel
-from fform.orm_mt import TreeNumber as TreeNumberModel
 from fform.orm_mt import DescriptorSynonym as DescriptorSynonymModel
 
-
-class DescriptorType(SQLAlchemyObjectType):
-    class Meta:
-        model = DescriptorModel
-
-
-class TreeNumberType(SQLAlchemyObjectType):
-    class Meta:
-        model = TreeNumberModel
+from ffgraphql.types.ct_primitives import ModelDescriptor
+from ffgraphql.types.ct_primitives import ModelTreeNumber
+from ffgraphql.types.ct_primitives import TypeDescriptor
 
 
-class DescriptorsType(graphene.ObjectType):
+class TypeDescriptors(graphene.ObjectType):
 
     by_ui = graphene.Field(
-        type=DescriptorType,
+        type=TypeDescriptor,
         description="Retrieve a MeSH descriptor through its UI.",
         ui=graphene.Argument(type=graphene.String, required=True),
     )
 
     by_tree_number_prefix = graphene.List(
-        of_type=DescriptorType,
+        of_type=TypeDescriptor,
         description=("Retrieve a list of MeSH descriptors matching a "
                      "tree-number prefix."),
         tree_number_prefix=graphene.Argument(
@@ -41,7 +32,7 @@ class DescriptorsType(graphene.ObjectType):
     )
 
     by_synonym = graphene.List(
-        of_type=DescriptorType,
+        of_type=TypeDescriptor,
         description=("Retrieve a list of MeSH descriptors fuzzy-matching a "
                      "synonym."),
         synonym=graphene.Argument(
@@ -59,26 +50,26 @@ class DescriptorsType(graphene.ObjectType):
         args: dict,
         info: graphene.ResolveInfo,
         ui: str
-    ) -> DescriptorModel:
-        """Retrieves a `DescriptorModel` object through its UI.
+    ) -> ModelDescriptor:
+        """Retrieves a `ModelDescriptor` object through its UI.
 
         Args:
             args (dict): The resolver arguments.
             info (graphene.ResolveInfo): The resolver info.
-            ui (str): The UI of the `DescriptorModel` to retrieve.
+            ui (str): The UI of the `ModelDescriptor` to retrieve.
 
         Returns:
-             DescriptorModel: The retrieved `DescriptorModel` object or `None`
+             DescriptorModel: The retrieved `ModelDescriptor` object or `None`
                 if no match was not found.
         """
 
-        # Retrieve the query on `DescriptorModel`.
-        query = DescriptorType.get_query(
+        # Retrieve the query on `ModelDescriptor`.
+        query = TypeDescriptor.get_query(
             info=info,
         )  # type: sqlalchemy.orm.query.Query
 
-        # Filter to the `DescriptorModel` record matching `ui`.
-        query = query.filter(DescriptorModel.ui == ui)
+        # Filter to the `ModelDescriptor` record matching `ui`.
+        query = query.filter(ModelDescriptor.ui == ui)
 
         obj = query.first()
 
@@ -89,8 +80,8 @@ class DescriptorsType(graphene.ObjectType):
         args: dict,
         info: graphene.ResolveInfo,
         tree_number_prefix: str
-    ) -> List[DescriptorModel]:
-        """Retrieves a list of `DescriptorModel` objects with a tree-number
+    ) -> List[ModelDescriptor]:
+        """Retrieves a list of `ModelDescriptor` objects with a tree-number
         prefix-matching `tree_number_prefix`.
 
         Args:
@@ -99,7 +90,7 @@ class DescriptorsType(graphene.ObjectType):
             tree_number_prefix (str): The tree-number prefix to match against.
 
         Returns:
-             list[DescriptorModel]: The list of matched `DescriptorModel`
+             list[DescriptorModel]: The list of matched `ModelDescriptor`
                 objects or an empty list if no match was found.
         """
 
@@ -107,13 +98,13 @@ class DescriptorsType(graphene.ObjectType):
         # automatically selects the model.
         session = info.context.get("session")  # type: sqlalchemy.orm.Session
 
-        # Query out `DescriptorModel`.
-        query = session.query(DescriptorModel)  # type: sqlalchemy.orm.Query
-        query = query.join(DescriptorModel.tree_numbers)
-        # Filter down to `DescriptorModel` objects with a tree-number
+        # Query out `ModelDescriptor`.
+        query = session.query(ModelDescriptor)  # type: sqlalchemy.orm.Query
+        query = query.join(ModelDescriptor.tree_numbers)
+        # Filter down to `ModelDescriptor` objects with a tree-number
         # prefix-matching `tree_number_prefix`.
         query = query.filter(
-            TreeNumberModel.tree_number.like("{}%".format(tree_number_prefix)),
+            ModelTreeNumber.tree_number.like("{}%".format(tree_number_prefix)),
         )
 
         objs = query.all()
@@ -127,8 +118,8 @@ class DescriptorsType(graphene.ObjectType):
         info: graphene.ResolveInfo,
         synonym: str,
         limit: Union[int, None] = None,
-    ) -> List[DescriptorModel]:
-        """Retrieves a list of `DescriptorModel` objects with a tree-number
+    ) -> List[ModelDescriptor]:
+        """Retrieves a list of `ModelDescriptor` objects with a tree-number
         prefix-matching `tree_number_prefix`.
 
         Args:
@@ -139,7 +130,7 @@ class DescriptorsType(graphene.ObjectType):
                 to return. Defaults to `None`.
 
         Returns:
-             list[DescriptorModel]: The list of matched `DescriptorModel`
+             list[DescriptorModel]: The list of matched `ModelDescriptor`
                 objects or an empty list if no match was found.
         """
 
@@ -154,12 +145,12 @@ class DescriptorsType(graphene.ObjectType):
             synonym,
         )).label("synonym_similarity")
 
-        # Query out `DescriptorModel`.
-        query = session.query(DescriptorModel)  # type: sqlalchemy.orm.Query
-        query = query.join(DescriptorModel.synonyms)
+        # Query out `ModelDescriptor`.
+        query = session.query(ModelDescriptor)  # type: sqlalchemy.orm.Query
+        query = query.join(ModelDescriptor.synonyms)
         query = query.filter(DescriptorSynonymModel.synonym.op("%%")(synonym))
         query = query.order_by(func_similarity.desc())
-        query = query.group_by(DescriptorModel.descriptor_id)
+        query = query.group_by(ModelDescriptor.descriptor_id)
 
         if limit is not None:
             query = query.limit(limit=limit)

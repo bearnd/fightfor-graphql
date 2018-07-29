@@ -2,11 +2,15 @@
 
 import graphene
 
-from ffgraphql.types.studies import StudyType
-from ffgraphql.types.studies import StudiesType
-from ffgraphql.types.descriptors import DescriptorType
-from ffgraphql.types.descriptors import DescriptorsType
-from ffgraphql.types.descriptors import TreeNumberType
+from ffgraphql.types.ct_primitives import TypeStudy
+from ffgraphql.types.ct_primitives import TypeMeshTerm
+from ffgraphql.types.ct_primitives import TypeLocation
+from ffgraphql.types.ct_primitives import TypeFacility
+from ffgraphql.types.ct_primitives import TypeIntervention
+from ffgraphql.types.ct_primitives import TypeDescriptor
+from ffgraphql.types.ct_primitives import TypeTreeNumber
+from ffgraphql.types.studies import TypeStudies
+from ffgraphql.types.descriptors import TypeDescriptors
 from ffgraphql.types.studies_stats import TypeCountStudiesCountry
 from ffgraphql.types.studies_stats import TypeStudiesStats
 
@@ -19,12 +23,12 @@ class Query(graphene.ObjectType):
     )
 
     studies = graphene.Field(
-        type=StudiesType,
+        type=TypeStudies,
         description="Clinical-trials studies.",
     )
 
     descriptors = graphene.Field(
-        type=DescriptorsType,
+        type=TypeDescriptors,
         description="MeSH descriptors.",
     )
 
@@ -34,22 +38,26 @@ class Query(graphene.ObjectType):
 
     @staticmethod
     def resolve_studies(args, info):
-        return StudiesType
+        return TypeStudies
 
     @staticmethod
     def resolve_descriptors(args, info):
-        return DescriptorsType
+        return TypeDescriptors
 
 
 schema = graphene.Schema(
     query=Query,
     types=[
-        StudyType,
-        StudiesType,
-        DescriptorType,
-        DescriptorsType,
+        TypeStudy,
+        TypeStudies,
+        TypeMeshTerm,
+        TypeLocation,
+        TypeFacility,
+        TypeIntervention,
+        TypeDescriptor,
+        TypeDescriptors,
         TypeCountStudiesCountry,
         TypeStudiesStats,
-        TreeNumberType,
+        TypeTreeNumber,
     ]
 )
