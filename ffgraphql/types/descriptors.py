@@ -6,11 +6,10 @@ import sqlalchemy.orm
 from sqlalchemy import func as sqlalchemy_func
 import graphene
 
-from fform.orm_mt import DescriptorSynonym as DescriptorSynonymModel
-
-from ffgraphql.types.ct_primitives import ModelDescriptor
-from ffgraphql.types.ct_primitives import ModelTreeNumber
-from ffgraphql.types.ct_primitives import TypeDescriptor
+from ffgraphql.types.mt_primitives import ModelDescriptor
+from ffgraphql.types.mt_primitives import ModelTreeNumber
+from ffgraphql.types.mt_primitives import ModelDescriptorSynonym
+from ffgraphql.types.mt_primitives import TypeDescriptor
 
 
 class TypeDescriptors(graphene.ObjectType):
@@ -141,14 +140,14 @@ class TypeDescriptors(graphene.ObjectType):
         # Define a function to calculate the maximum similarity between a
         # descriptor's synonyms and the synonym query.
         func_similarity = sqlalchemy_func.max(sqlalchemy_func.similarity(
-            DescriptorSynonymModel.synonym,
+            ModelDescriptorSynonym.synonym,
             synonym,
         )).label("synonym_similarity")
 
         # Query out `ModelDescriptor`.
         query = session.query(ModelDescriptor)  # type: sqlalchemy.orm.Query
         query = query.join(ModelDescriptor.synonyms)
-        query = query.filter(DescriptorSynonymModel.synonym.op("%%")(synonym))
+        query = query.filter(ModelDescriptorSynonym.synonym.op("%%")(synonym))
         query = query.order_by(func_similarity.desc())
         query = query.group_by(ModelDescriptor.descriptor_id)
 

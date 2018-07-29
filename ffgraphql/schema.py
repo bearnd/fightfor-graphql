@@ -7,8 +7,8 @@ from ffgraphql.types.ct_primitives import TypeMeshTerm
 from ffgraphql.types.ct_primitives import TypeLocation
 from ffgraphql.types.ct_primitives import TypeFacility
 from ffgraphql.types.ct_primitives import TypeIntervention
-from ffgraphql.types.ct_primitives import TypeDescriptor
-from ffgraphql.types.ct_primitives import TypeTreeNumber
+from ffgraphql.types.mt_primitives import TypeDescriptor
+from ffgraphql.types.mt_primitives import TypeTreeNumber
 from ffgraphql.types.studies import TypeStudies
 from ffgraphql.types.descriptors import TypeDescriptors
 from ffgraphql.types.studies_stats import TypeCountStudiesCountry

@@ -13,12 +13,12 @@ from ffgraphql.types.ct_primitives import ModelStudy
 from ffgraphql.types.ct_primitives import ModelMeshTerm
 from ffgraphql.types.ct_primitives import ModelLocation
 from ffgraphql.types.ct_primitives import ModelFacility
-from ffgraphql.types.ct_primitives import ModelTreeNumber
-from ffgraphql.types.ct_primitives import ModelDescriptor
 from ffgraphql.types.ct_primitives import ModelIntervention
 from ffgraphql.types.ct_primitives import EnumOverallStatus
 from ffgraphql.types.ct_primitives import EnumIntervention
 from ffgraphql.types.ct_primitives import EnumPhase
+from ffgraphql.types.mt_primitives import ModelTreeNumber
+from ffgraphql.types.mt_primitives import ModelDescriptor
 from ffgraphql.utils import apply_requested_fields
 
 

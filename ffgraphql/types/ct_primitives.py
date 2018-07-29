@@ -11,8 +11,6 @@ from fform.orm_ct import OverallStatusType as EnumOverallStatus
 from fform.orm_ct import InterventionType as EnumIntervention
 from fform.orm_ct import PhaseType as EnumPhase
 from fform.orm_ct import StudyType as EnumStudy
-from fform.orm_mt import Descriptor as ModelDescriptor
-from fform.orm_mt import TreeNumber as ModelTreeNumber
 
 
 class TypeStudy(SQLAlchemyObjectType):
@@ -38,13 +36,3 @@ class TypeFacility(SQLAlchemyObjectType):
 class TypeIntervention(SQLAlchemyObjectType):
     class Meta:
         model = ModelIntervention
-
-
-class TypeDescriptor(SQLAlchemyObjectType):
-    class Meta:
-        model = ModelDescriptor
-
-
-class TypeTreeNumber(SQLAlchemyObjectType):
-    class Meta:
-        model = ModelTreeNumber
