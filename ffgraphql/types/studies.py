@@ -7,26 +7,24 @@ import sqlalchemy
 import sqlalchemy.orm
 from sqlalchemy.dialects import postgresql
 import graphene
-from graphene_sqlalchemy import SQLAlchemyObjectType
-from fform.orm_ct import Study as StudyModel
-from fform.orm_ct import MeshTerm as MeshTermModel
-from fform.orm_ct import Location as LocationModel
-from fform.orm_ct import OverallStatusType
-from fform.orm_ct import InterventionType
-from fform.orm_mt import Descriptor as DescriptorModel
-from fform.orm_mt import TreeNumber as TreeNumberModel
 
+from ffgraphql.types.ct_primitives import TypeStudy
+from ffgraphql.types.ct_primitives import ModelStudy
+from ffgraphql.types.ct_primitives import ModelMeshTerm
+from ffgraphql.types.ct_primitives import ModelLocation
+from ffgraphql.types.ct_primitives import ModelFacility
+from ffgraphql.types.ct_primitives import ModelTreeNumber
+from ffgraphql.types.ct_primitives import ModelDescriptor
+from ffgraphql.types.ct_primitives import ModelIntervention
+from ffgraphql.types.ct_primitives import EnumOverallStatus
+from ffgraphql.types.ct_primitives import EnumIntervention
+from ffgraphql.types.ct_primitives import EnumPhase
 from ffgraphql.utils import apply_requested_fields
 
 
-class StudyType(SQLAlchemyObjectType):
-    class Meta:
-        model = StudyModel
-
-
-class StudiesType(graphene.ObjectType):
+class TypeStudies(graphene.ObjectType):
     by_nct_id = graphene.List(
-        of_type=StudyType,
+        of_type=TypeStudy,
         description="Retrieve clinical-trial studies through their NCT IDs.",
         nct_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.String),
@@ -35,7 +33,7 @@ class StudiesType(graphene.ObjectType):
     )
 
     by_id = graphene.List(
-        of_type=StudyType,
+        of_type=TypeStudy,
         description="Retrieve clinical-trial studies through their IDs.",
         study_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.Int),
@@ -44,7 +42,7 @@ class StudiesType(graphene.ObjectType):
     )
 
     search = graphene.List(
-        of_type=StudyType,
+        of_type=TypeStudy,
         description=("Retrieve a list of clinical-trial studies matching "
                      "several filters."),
         mesh_descriptor_ids=graphene.Argument(
@@ -61,32 +59,32 @@ class StudiesType(graphene.ObjectType):
     )
 
     filter = graphene.List(
-        of_type=StudyType,
+        of_type=TypeStudy,
         description=("Retrieve a list of clinical-trial studies through "
                      "dynamic filtering and sorting."),
         study_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.Int),
             required=True
         ),
-        overallStatuses=graphene.Argument(
+        overall_statuses=graphene.Argument(
             type=graphene.List(
-                of_type=graphene.Enum.from_enum(OverallStatusType),
+                of_type=graphene.Enum.from_enum(EnumOverallStatus),
             ),
             description="A list of overall statuses to filter by.",
             required=False,
         ),
         cities=graphene.Argument(
-            type=graphene.List(of_type=graphene.String()),
+            type=graphene.List(of_type=graphene.String),
             description="A list of cities to filter by.",
             required=False,
         ),
         states=graphene.Argument(
-            type=graphene.List(of_type=graphene.String()),
+            type=graphene.List(of_type=graphene.String),
             description="A list of states or regions to filter by.",
             required=False,
         ),
         countries=graphene.Argument(
-            type=graphene.List(of_type=graphene.String()),
+            type=graphene.List(of_type=graphene.String),
             description="A list of countries to filter by.",
             required=False,
         ),
@@ -102,33 +100,33 @@ class StudiesType(graphene.ObjectType):
         args: dict,
         info: graphene.ResolveInfo,
         nct_ids: List[str],
-    ) -> List[StudyModel]:
-        """Retrieves `StudyModel` record objects through their NCT IDs.
+    ) -> List[ModelStudy]:
+        """Retrieves `ModelStudy` record objects through their NCT IDs.
 
         Args:
             args (dict): The resolver arguments.
             info (graphene.ResolveInfo): The resolver info.
-            nct_ids (List[str]): The NCT IDs for which `StudyModel` record
+            nct_ids (List[str]): The NCT IDs for which `ModelStudy` record
                 objects will be retrieved.
 
         Returns:
-             List[StudyModel]: The retrieved `StudyModel` record objects or an
+             List[StudyModel]: The retrieved `ModelStudy` record objects or an
                 empty list if no matches were found.
         """
 
-        # Retrieve the query on `StudyModel`.
-        query = StudyType.get_query(
+        # Retrieve the query on `ModelStudy`.
+        query = TypeStudy.get_query(
             info=info,
         )  # type: sqlalchemy.orm.query.Query
 
-        # Filter to the `StudyModel` records matching any of the `nct_ids`.
-        query = query.filter(StudyModel.nct_id.in_(nct_ids))
+        # Filter to the `ModelStudy` records matching any of the `nct_ids`.
+        query = query.filter(ModelStudy.nct_id.in_(nct_ids))
 
         # Limit query to fields requested in the GraphQL query.
         query = apply_requested_fields(
             info=info,
             query=query,
-            orm_class=StudyModel,
+            orm_class=ModelStudy,
         )
 
         objs = query.all()
@@ -140,33 +138,33 @@ class StudiesType(graphene.ObjectType):
         args: dict,
         info: graphene.ResolveInfo,
         study_ids: List[int],
-    ) -> List[StudyModel]:
-        """Retrieves `StudyModel` record objects through their IDs.
+    ) -> List[ModelStudy]:
+        """Retrieves `ModelStudy` record objects through their IDs.
 
         Args:
             args (dict): The resolver arguments.
             info (graphene.ResolveInfo): The resolver info.
-            study_ids (List[str]): The IDs for which `StudyModel` record
+            study_ids (List[str]): The IDs for which `ModelStudy` record
                 objects will be retrieved.
 
         Returns:
-             List[StudyModel]: The retrieved `StudyModel` record objects or an
+             List[StudyModel]: The retrieved `ModelStudy` record objects or an
                 empty list if no matches were found.
         """
 
-        # Retrieve the query on `StudyModel`.
-        query = StudyType.get_query(
+        # Retrieve the query on `ModelStudy`.
+        query = TypeStudy.get_query(
             info=info,
         )  # type: sqlalchemy.orm.query.Query
 
-        # Filter to the `StudyModel` records matching any of the `study_ids`.
-        query = query.filter(StudyModel.study_id.in_(study_ids))
+        # Filter to the `ModelStudy` records matching any of the `study_ids`.
+        query = query.filter(ModelStudy.study_id.in_(study_ids))
 
         # Limit query to fields requested in the GraphQL query.
         query = apply_requested_fields(
             info=info,
             query=query,
-            orm_class=StudyModel,
+            orm_class=ModelStudy,
         )
 
         objs = query.all()
@@ -182,7 +180,7 @@ class StudiesType(graphene.ObjectType):
         year_end: Union[int, None] = None,
         do_include_children: Union[bool, None] = True,
     ):
-        """Retrieves a list of `StudyModel` objects matching several optional
+        """Retrieves a list of `ModelStudy` objects matching several optional
         filters.
 
         Args:
@@ -191,15 +189,15 @@ class StudiesType(graphene.ObjectType):
             mesh_descriptor_ids (List[int]): A list of MeSH descriptor IDs of
                 the descriptors tagged against the study.
             year_beg (int, optional): The minimum year the start date of a
-                matched `StudyModel` may have.
+                matched `ModelStudy` may have.
             year_end (int, optional): The maximum year the start date of a
-                matched `StudyModel` may have.
+                matched `ModelStudy` may have.
             do_include_children (bool, optional): Whether to search for and
                 include in the search the children MeSH descriptors of the
                 provided descriptors.
 
         Returns:
-             list[StudyModel]: The list of matched `StudyModel` objects or an
+             list[StudyModel]: The list of matched `ModelStudy` objects or an
                 empty list if no match was found.
         """
 
@@ -212,10 +210,10 @@ class StudiesType(graphene.ObjectType):
         # use the provided ones.
         if do_include_children:
             # Retrieve all tree-numbers for the specified MeSH descriptors.
-            query_tns = session.query(TreeNumberModel.tree_number)
-            query_tns = query_tns.join(TreeNumberModel.descriptors)
+            query_tns = session.query(ModelTreeNumber.tree_number)
+            query_tns = query_tns.join(ModelTreeNumber.descriptors)
             query_tns = query_tns.filter(
-                DescriptorModel.descriptor_id.in_(mesh_descriptor_ids),
+                ModelDescriptor.descriptor_id.in_(mesh_descriptor_ids),
             )
             # Retrieve the tree-numbers and get them out of their encompassing
             # tuple.
@@ -227,10 +225,10 @@ class StudiesType(graphene.ObjectType):
 
             # Find all names of the descriptors and their children for the found
             # tree-numbers.
-            query_descs = session.query(DescriptorModel.name)
-            query_descs = query_descs.join(DescriptorModel.tree_numbers)
+            query_descs = session.query(ModelDescriptor.name)
+            query_descs = query_descs.join(ModelDescriptor.tree_numbers)
             query_descs = query_descs.filter(
-                TreeNumberModel.tree_number.like(
+                ModelTreeNumber.tree_number.like(
                     sqlalchemy.any_(postgresql.array(
                         tuple(["{}%".format(tn) for tn in tree_numbers])
                     ))
@@ -239,9 +237,9 @@ class StudiesType(graphene.ObjectType):
         else:
             # Find the names of the descriptors defined under
             # `mesh_descriptor_ids`.
-            query_descs = session.query(DescriptorModel.name)
+            query_descs = session.query(ModelDescriptor.name)
             query_descs = query_descs.filter(
-                DescriptorModel.descriptor_id.in_(mesh_descriptor_ids)
+                ModelDescriptor.descriptor_id.in_(mesh_descriptor_ids)
             )
         # Retrieve the descriptor names, get them out of their encompassing
         # tuples, and unique them.
@@ -253,27 +251,27 @@ class StudiesType(graphene.ObjectType):
 
         # Find all clinical-trial studies associated with the MeSH descriptor
         # found prior.
-        query = session.query(StudyModel)
+        query = session.query(ModelStudy)
 
         # Filter studies by associated mesh-descriptors.
-        query = query.join(StudyModel.mesh_terms)
-        query = query.filter(MeshTermModel.term.in_(descriptor_names))
+        query = query.join(ModelStudy.mesh_terms)
+        query = query.filter(ModelMeshTerm.term.in_(descriptor_names))
 
         # Filter studies the year of their start-date.
         if year_beg:
             query = query.filter(
-                StudyModel.start_date >= datetime.date(year_beg, 1, 1)
+                ModelStudy.start_date >= datetime.date(year_beg, 1, 1)
             )
         if year_end:
             query = query.filter(
-                StudyModel.start_date <= datetime.date(year_end, 12, 31)
+                ModelStudy.start_date <= datetime.date(year_end, 12, 31)
             )
 
         # Limit query to fields requested in the GraphQL query.
         query = apply_requested_fields(
             info=info,
             query=query,
-            orm_class=StudyModel,
+            orm_class=ModelStudy,
         )
 
         objs = query.all()
@@ -285,7 +283,7 @@ class StudiesType(graphene.ObjectType):
         args: dict,
         info: graphene.ResolveInfo,
         study_ids: List[int],
-        overallStatuses: Optional[List[OverallStatusType]] = None,
+        overall_statuses: Optional[List[EnumOverallStatus]] = None,
         cities: Optional[List[str]] = None,
         states: Optional[List[str]] = None,
         countries: Optional[List[str]] = None,
@@ -298,10 +296,10 @@ class StudiesType(graphene.ObjectType):
         # automatically selects the model.
         session = info.context.get("session")  # type: sqlalchemy.orm.Session
 
-        query = session.query(StudyModel)
+        query = session.query(ModelStudy)
 
         # Limit studies to those with one of the defined IDs.
-        query = query.filter(StudyModel.study_id.in_(study_ids))
+        query = query.filter(ModelStudy.study_id.in_(study_ids))
 
 
         if cities or states or countries:
