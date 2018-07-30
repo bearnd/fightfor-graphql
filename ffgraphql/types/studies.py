@@ -17,6 +17,8 @@ from ffgraphql.types.ct_primitives import ModelIntervention
 from ffgraphql.types.ct_primitives import EnumOverallStatus
 from ffgraphql.types.ct_primitives import EnumIntervention
 from ffgraphql.types.ct_primitives import EnumPhase
+from ffgraphql.types.ct_primitives import EnumStudy
+from ffgraphql.types.ct_primitives import EnumOrder
 from ffgraphql.types.mt_primitives import ModelTreeNumber
 from ffgraphql.types.mt_primitives import ModelDescriptor
 from ffgraphql.utils import apply_requested_fields
@@ -102,6 +104,22 @@ class TypeStudies(graphene.ObjectType):
             description="A list of trial phases to filter by.",
             required=False,
         ),
+        study_types=graphene.Argument(
+            type=graphene.List(
+                of_type=graphene.Enum.from_enum(EnumStudy),
+            ),
+            description="A list of study-types to filter by.",
+            required=False,
+        ),
+        year_beg=graphene.Argument(type=graphene.Int, required=False),
+        year_end=graphene.Argument(type=graphene.Int, required=False),
+        order_by=graphene.Argument(type=graphene.String, required=False),
+        order=graphene.Argument(
+            type=EnumOrder,
+            required=False,
+        ),
+        offset=graphene.Argument(type=graphene.Int, required=False),
+        limit=graphene.Argument(type=graphene.Int, required=False),
     )
 
     @staticmethod
@@ -298,15 +316,20 @@ class TypeStudies(graphene.ObjectType):
         countries: Optional[List[str]] = None,
         intervention_types: Optional[List[EnumIntervention]] = None,
         phases: Optional[List[EnumPhase]] = None,
-        # order_by: Optional[List[str]] = None,
-        # order: Optional[List[OrderType]] = None,
+        study_types: Optional[List[EnumStudy]] = None,
+        year_beg: Union[int, None] = None,
+        year_end: Union[int, None] = None,
+        order_by: Optional[str] = None,
+        order: Optional[EnumOrder] = None,
+        offset: Optional[int] = None,
+        limit: Optional[int] = None,
     ):
 
         # Retrieve the session out of the context as the `get_query` method
         # automatically selects the model.
         session = info.context.get("session")  # type: sqlalchemy.orm.Session
 
-        query = session.query(ModelStudy)
+        query = session.query(ModelStudy)  # type: sqlalchemy.orm.query.Query
 
         # Limit studies to those with one of the defined IDs.
         query = query.filter(ModelStudy.study_id.in_(study_ids))
@@ -350,6 +373,38 @@ class TypeStudies(graphene.ObjectType):
                 for _status in phases
             ]
             query = query.filter(ModelStudy.phase.in_(_members))
+
+        # Apply an study-type filter if any are defined.
+        if study_types:
+            _members = [
+                EnumStudy.get_member(value=str(_status))
+                for _status in study_types
+            ]
+            query = query.filter(ModelStudy.study_type.in_(_members))
+
+        # Filter studies the year of their start-date.
+        if year_beg:
+            query = query.filter(
+                ModelStudy.start_date >= datetime.date(year_beg, 1, 1)
+            )
+        if year_end:
+            query = query.filter(
+                ModelStudy.start_date <= datetime.date(year_end, 12, 31)
+            )
+
+        if order_by:
+            if order and order == EnumOrder.DESC.value:
+                query = query.order_by(getattr(ModelStudy, order_by).desc())
+            else:
+                query = query.order_by(getattr(ModelStudy, order_by).asc())
+
+        # Apply offset (if defined).
+        if offset:
+            query = query.offset(offset=offset)
+
+        # Apply limit (if defined).
+        if limit:
+            query = query.limit(limit=limit)
 
         objs = query.all()
 

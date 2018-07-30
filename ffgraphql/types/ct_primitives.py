@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import graphene
 from graphene_sqlalchemy import SQLAlchemyObjectType
 
 from fform.orm_ct import Study as ModelStudy
@@ -11,6 +12,12 @@ from fform.orm_ct import OverallStatusType as EnumOverallStatus
 from fform.orm_ct import InterventionType as EnumIntervention
 from fform.orm_ct import PhaseType as EnumPhase
 from fform.orm_ct import StudyType as EnumStudy
+
+
+class EnumOrder(graphene.Enum):
+
+    ASC = "ASC"
+    DESC = "DESC"
 
 
 class TypeStudy(SQLAlchemyObjectType):
