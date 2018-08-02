@@ -187,7 +187,8 @@ class TypeStudies(graphene.ObjectType):
         # Filter to the `ModelStudy` records matching any of the `study_ids`.
         query = query.filter(ModelStudy.study_id.in_(study_ids))
 
-        # Limit query to fields requested in the GraphQL query.
+        # Limit query to fields requested in the GraphQL query adding
+        # `load_only` and `joinedload` options as required.
         query = apply_requested_fields(
             info=info,
             query=query,
