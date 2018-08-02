@@ -93,29 +93,155 @@ def extract_requested_fields(
     return result
 
 
+def _get_load_only_fields(
+    fields_all: Dict,
+    inspection: sqlalchemy.orm.Mapper,
+) -> List[str]:
+    """Retrieves the load-only fields out of the requested fields of a GraphQL
+    query.
+
+    This function retrieves the load-only fields for a given queried ORM class
+    out the requested fields of a GraphQL query using that ORM class'
+    inspection. The result of this function can be used in a `load_only` option
+    function.
+
+    Note:
+        This function assumes that the top level of the `fields_all`
+        dictionary refers directly to the class for which the `inspection`
+        was performed.
+
+    Args:
+        fields_all (Dict): The GraphQL fields requested top-leveled to the
+            queried ORM class.
+        inspection (sqlalchemy.orm.Mapper): An inspection of the queried
+            ORM class performed with the `sqlalchemy.inspect` function.
+
+    Returns:
+        List[str]: The list of keys to be used in the `load_only` function.
+    """
+
+    # Retrieve the fields pertaining to the queried ORM class by filtering
+    # down to the top-fields that are columns in the ORM class.
+    keys = [key for key in fields_all.keys() if key in inspection.columns]
+
+    return keys
+
+
+def _get_query_options(
+    fields_all: Dict,
+    inspection: sqlalchemy.orm.Mapper,
+    option: Optional[sqlalchemy.orm.strategy_options.Load] = None
+) -> List[sqlalchemy.orm.strategy_options.Load]:
+    """Collects `load_only` and `joinedload` SQLAlchemy Query options based on
+    a GraphQL query accounting for arbitrarily-nested relationships.
+
+    This function operates in a recursive fashion and collects `load_only` and
+    `joinedload` options for an SQLAlchemy Query object thus limiting the
+    loaded fields of the queried ORM class/table to those requested in the
+    GraphQL query. In addition, this function supports arbitrarily nested
+    relationships to the root ORM class adding `joinedload` options to preclude
+    lazy-loading of those relationships in addition to applying `load_only`
+    options to the relationships themselves.
+
+    Args:
+        fields_all (Dict): The GraphQL fields requested top-leveled to the
+            queried ORM class.
+        inspection (sqlalchemy.orm.Mapper): An inspection of the queried
+            ORM class performed with the `sqlalchemy.inspect` function.
+        option (Optional[sqlalchemy.orm.strategy_options.Load]): The root option
+            upon which more options will be chained as required. Defaults to
+            `None`
+
+    Returns:
+        List[sqlalchemy.orm.strategy_options.Load]: A list of the collected
+            options to be applied to the SQLAlchemy query via the `options`
+            method.
+    """
+
+    # If not `option` is given then create a 'root' option by adding a
+    # `load_only` for the fields defined for the ORM class.
+    if option is None:
+        fields_lo = _get_load_only_fields(
+            inspection=inspection,
+            fields_all=fields_all
+        )
+        option = sqlalchemy.orm.load_only(*fields_lo)
+
+    # Retrieve the names of all relationship attributes of the ORM class out of
+    # the requested fields using the provided `inspection`.
+    names_rels = [
+        key for key in fields_all.keys()
+        if key in inspection.relationships
+    ]
+
+    # Create an empty list that will hold all the created options. This list is
+    # needed as each relationship needs to be defined in distinct options.
+    options = []
+
+    # If the ORM class does not have any relationships defined in the requested
+    # fields then simply add the provided `option` to `options`. The next loop
+    # will then be skipped and only that `option` will be returned.
+    if not names_rels:
+        options.append(option)
+
+    # Iterate over the requested relationships
+    for name_rel in names_rels:
+        # Retrieve the fields requested under this relationship.
+        fields_rel = fields_all[name_rel]
+        # Retrieve the relationship property out of the inspection.
+        prop_rel = inspection.relationships[name_rel]
+        # Retrieve the ORM class this relationship pertains to.
+        class_rel = prop_rel.mapper.class_
+        # Retrieve the relationship attribute under the original ORM class.
+        attr_rel = getattr(inspection.class_, name_rel)
+        # Perform an inspection on the relationship's ORM class.
+        inspection_rel = sqlalchemy.inspect(class_rel)
+        # Retrieve the load-only fields for the relationships's ORM class.
+        fields_lo_rel = _get_load_only_fields(
+            inspection=inspection_rel,
+            fields_all=fields_rel,
+        )
+        # Chain a `joinedload` option to the original `option` join-loading the
+        # requested relationship. In addition, chain a `load_only` limiting to
+        # requested fields for that relationship only.
+        _option = option.joinedload(attr_rel).load_only(*fields_lo_rel)
+        # Recurse into the relationship in order to chain any relationships that
+        # may be nested under it.
+        options += _get_query_options(
+            fields_all=fields_rel,
+            inspection=inspection_rel,
+            option=_option,
+        )
+
+    return options
+
+
 def apply_requested_fields(
     info: graphql.execution.base.ResolveInfo,
     query: sqlalchemy.orm.Query,
     orm_class: Type[OrmBase],
-    fields: Optional[Dict[str, None]] = None,
+    fields: Optional[Dict] = None,
 ) -> sqlalchemy.orm.Query:
-    """Updates the SQLAlchemy Query object by limiting the loaded fields of the
-    table and its relationship to the ones explicitly requested in the GraphQL
-    query.
+    """Updates the SQLAlchemy Query object by adding `load_only` and
+    `joinedload` option.
+
+    This function updates an SQLAlchemy Query object limiting the loaded fields
+    of the queried ORM class/table to those requested in the GraphQL query. In
+    addition, this function supports arbitrarily nested relationships to the
+    root ORM class adding `joinedload` options to preclude lazy-loading of
+    those relationships in addition to applying `load_only` options to the
+    relationships themselves.
 
     Note:
-        This function is fairly simplistic in that it assumes that (1) the
-        SQLAlchemy query only selects a single ORM class/table and that (2)
-        relationship fields are only one level deep, i.e., that requestd fields
-        are either table fields or fields of the table relationship, e.g., it
-        does not support fields of relationship relationships.
+        This function assumes that the SQLAlchemy query only selects a single
+        ORM class/table at the root of the query.
 
     Args:
         info (graphql.execution.base.ResolveInfo): The GraphQL query info passed
             to the resolver function.
         query (sqlalchemy.orm.Query): The SQLAlchemy Query object to be updated.
         orm_class (Type[OrmBaseMixin]): The ORM class of the selected table.
-        fields (Optional[Dict[str, None]]): Pre-extracted requested fields. If
+        fields (Optional[Dict]): Pre-extracted requested fields. If
             provided extraction is skipped.
 
     Returns:
@@ -134,45 +260,16 @@ def apply_requested_fields(
     # We assume that the top level of the `fields` dictionary only contains a
     # single key referring to the GraphQL resource being resolved.
     tl_key = list(fields.keys())[0]
-    # We assume that any keys that have a value of `None` (as opposed to
-    # dictionaries) are fields of the primary table. In addition, any keys that
-    # start with `__` are typically added by the GraphQL client and omitted.
-    table_fields = [
-        key for key, val in fields[tl_key].items()
-        if (val is None and not key.startswith("__"))
-    ]
 
-    # We assume that any keys that have a value being a dictionary are
-    # relationship attributes on the primary table with the keys in the
-    # dictionary being fields on that relationship. Thus we create a list of
-    # `[relatioship_name, relationship_fields]` lists to be used in the
-    # `joinedload` definitions.
-    relationship_fieldsets = [
-        [key, val.keys()]
-        for key, val in fields[tl_key].items()
-        if isinstance(val, dict)
-    ]
-
-    # Assemble a list of `joinedload` definitions on the defined relationship
-    # attribute name and the requested fields on that relationship.
-    options_joinedloads = []
-    for relationship_fieldset in relationship_fieldsets:
-        relationship = relationship_fieldset[0]
-        rel_fields = relationship_fieldset[1]
-        options_joinedloads.append(
-            sqlalchemy.orm.joinedload(
-                getattr(orm_class, relationship)
-            ).load_only(*rel_fields)
-        )
-
-    # Update the SQLAlchemy query by limiting the loaded fields on the primary
-    # table as well as by including the `joinedload` definitions.
-    query = query.options(
-        sqlalchemy.orm.load_only(*table_fields),
-        *options_joinedloads
+    # Retrieve the `load_only` and `joinedload` options to be applied to the
+    # query in a recursive fashion accounting for arbitrarily nested
+    # relationships.
+    options = _get_query_options(
+        fields_all=fields[tl_key],
+        inspection=sqlalchemy.inspect(orm_class)
     )
 
+    # Apply the retrieved options to the query.
+    query = query.options(*options)
+
     return query
-
-
-
