@@ -13,7 +13,6 @@ from ffgraphql.schema import schema
 class DemoTest(unittest.TestCase):
 
     def setUp(self):
-
         cfg = import_config(
             fname_config_file="/etc/fightfor-graphql/fightfor-graphql.json",
         )
@@ -36,6 +35,7 @@ class DemoTest(unittest.TestCase):
 
     def tearDown(self):
         self.session.close()
+
     #
     # def test_query_studies_search(self):
     #
@@ -81,25 +81,64 @@ class DemoTest(unittest.TestCase):
     #             "studyIds": [115251, 115525, 115791, 115847]
     #         }
     #     )
+    #
+    # def test_sth(self):
+    #
+    #     query = """
+    #         query filterStudies($studyIds: [Int]!){
+    #           studies {
+    #             filter(
+    #               studyIds: $studyIds,
+    #               filters: [
+    #                 {
+    #                   field: "org_study_id",
+    #                   operator: EQ,
+    #                   value: "CUC10-BNE01"
+    #                 }
+    #               ]
+    #             ) {
+    #               studyId
+    #             }
+    #           }
+    #         }
+    #     """
+    #
+    #     result_eval = self.client.execute(
+    #         query,
+    #         context_value={"session": self.session},
+    #         variable_values={
+    #             "studyIds": [115251, 115525, 115791, 115847]
+    #         }
+    #     )
 
     def test_sth(self):
-
         query = """
-            query filterStudies($studyIds: [Int]!){
-              studies {
-                filter(
-                  studyIds: $studyIds,
-                  filters: [
-                    {
-                      field: "org_study_id",
-                      operator: EQ,
-                      value: "CUC10-BNE01"
+            query filterStudies(
+                $studyIds: [Int]!,
+                $cities: [String]
+            ) {
+                studies {
+                    filter(
+                        studyIds: $studyIds,
+                        cities: $cities
+                    ) {
+                        studyId,
+                        briefTitle,
+                        locations {
+                            locationId,
+                            facility {
+                                name,
+                                city,
+                                state,
+                                country
+                            }
+                        },
+                        interventions {
+                            interventionType,
+                            name
+                        }
                     }
-                  ]
-                ) {
-                  studyId
                 }
-              }
             }
         """
 
@@ -107,7 +146,18 @@ class DemoTest(unittest.TestCase):
             query,
             context_value={"session": self.session},
             variable_values={
-                "studyIds": [115251, 115525, 115791, 115847]
+                "studyIds": [
+                    1,
+                    8,
+                    10,
+                    11,
+                    12,
+                    13
+                ],
+                "cities": [
+                    "Minneapolis",
+                    "Burlington"
+                ]
             }
         )
 

@@ -187,7 +187,8 @@ class TypeStudies(graphene.ObjectType):
         # Filter to the `ModelStudy` records matching any of the `study_ids`.
         query = query.filter(ModelStudy.study_id.in_(study_ids))
 
-        # Limit query to fields requested in the GraphQL query.
+        # Limit query to fields requested in the GraphQL query adding
+        # `load_only` and `joinedload` options as required.
         query = apply_requested_fields(
             info=info,
             query=query,
@@ -330,6 +331,14 @@ class TypeStudies(graphene.ObjectType):
         session = info.context.get("session")  # type: sqlalchemy.orm.Session
 
         query = session.query(ModelStudy)  # type: sqlalchemy.orm.query.Query
+
+        # Limit query to fields requested in the GraphQL query adding
+        # `load_only` and `joinedload` options as required.
+        query = apply_requested_fields(
+            info=info,
+            query=query,
+            orm_class=ModelStudy,
+        )
 
         # Limit studies to those with one of the defined IDs.
         query = query.filter(ModelStudy.study_id.in_(study_ids))
