@@ -5,8 +5,9 @@ from typing import Union, List, Optional
 
 import sqlalchemy
 import sqlalchemy.orm
-from sqlalchemy.dialects import postgresql
 import graphene
+from sqlalchemy.dialects import postgresql
+from sqlalchemy import func as sqlalchemy_func
 
 from ffgraphql.types.ct_primitives import TypeStudy
 from ffgraphql.types.ct_primitives import ModelStudy
@@ -14,11 +15,15 @@ from ffgraphql.types.ct_primitives import ModelMeshTerm
 from ffgraphql.types.ct_primitives import ModelLocation
 from ffgraphql.types.ct_primitives import ModelFacility
 from ffgraphql.types.ct_primitives import ModelIntervention
+from ffgraphql.types.ct_primitives import TypeEnumOverallStatus
 from ffgraphql.types.ct_primitives import EnumOverallStatus
+from ffgraphql.types.ct_primitives import TypeEnumIntervention
 from ffgraphql.types.ct_primitives import EnumIntervention
+from ffgraphql.types.ct_primitives import TypeEnumPhase
 from ffgraphql.types.ct_primitives import EnumPhase
+from ffgraphql.types.ct_primitives import TypeEnumStudy
 from ffgraphql.types.ct_primitives import EnumStudy
-from ffgraphql.types.ct_primitives import EnumOrder
+from ffgraphql.types.ct_primitives import TypeEnumOrder
 from ffgraphql.types.mt_primitives import ModelTreeNumber
 from ffgraphql.types.mt_primitives import ModelDescriptor
 from ffgraphql.utils import apply_requested_fields
@@ -69,9 +74,7 @@ class TypeStudies(graphene.ObjectType):
             required=True
         ),
         overall_statuses=graphene.Argument(
-            type=graphene.List(
-                of_type=graphene.Enum.from_enum(EnumOverallStatus),
-            ),
+            type=graphene.List(of_type=TypeEnumOverallStatus),
             description="A list of overall statuses to filter by.",
             required=False,
         ),
@@ -91,35 +94,72 @@ class TypeStudies(graphene.ObjectType):
             required=False,
         ),
         intervention_types=graphene.Argument(
-            type=graphene.List(
-                of_type=graphene.Enum.from_enum(EnumIntervention),
-            ),
+            type=graphene.List(of_type=TypeEnumIntervention),
             description="A list of intevention types to filter by.",
             required=False,
         ),
         phases=graphene.Argument(
-            type=graphene.List(
-                of_type=graphene.Enum.from_enum(EnumPhase),
-            ),
+            type=graphene.List(of_type=TypeEnumPhase),
             description="A list of trial phases to filter by.",
             required=False,
         ),
         study_types=graphene.Argument(
-            type=graphene.List(
-                of_type=graphene.Enum.from_enum(EnumStudy),
-            ),
+            type=graphene.List(of_type=TypeEnumStudy),
             description="A list of study-types to filter by.",
             required=False,
         ),
         year_beg=graphene.Argument(type=graphene.Int, required=False),
         year_end=graphene.Argument(type=graphene.Int, required=False),
         order_by=graphene.Argument(type=graphene.String, required=False),
-        order=graphene.Argument(
-            type=EnumOrder,
-            required=False,
-        ),
+        order=graphene.Argument(type=TypeEnumOrder, required=False),
         offset=graphene.Argument(type=graphene.Int, required=False),
         limit=graphene.Argument(type=graphene.Int, required=False),
+    )
+
+    count = graphene.Int(
+        description=("Retrieve a list of clinical-trial studies through "
+                     "dynamic filtering and sorting."),
+        study_ids=graphene.Argument(
+            type=graphene.List(of_type=graphene.Int),
+            required=True
+        ),
+        overall_statuses=graphene.Argument(
+            type=graphene.List(of_type=TypeEnumOverallStatus),
+            description="A list of overall statuses to filter by.",
+            required=False,
+        ),
+        cities=graphene.Argument(
+            type=graphene.List(of_type=graphene.String),
+            description="A list of cities to filter by.",
+            required=False,
+        ),
+        states=graphene.Argument(
+            type=graphene.List(of_type=graphene.String),
+            description="A list of states or regions to filter by.",
+            required=False,
+        ),
+        countries=graphene.Argument(
+            type=graphene.List(of_type=graphene.String),
+            description="A list of countries to filter by.",
+            required=False,
+        ),
+        intervention_types=graphene.Argument(
+            type=graphene.List(of_type=TypeEnumIntervention),
+            description="A list of intevention types to filter by.",
+            required=False,
+        ),
+        phases=graphene.Argument(
+            type=graphene.List(of_type=TypeEnumPhase),
+            description="A list of trial phases to filter by.",
+            required=False,
+        ),
+        study_types=graphene.Argument(
+            type=graphene.List(of_type=TypeEnumStudy),
+            description="A list of study-types to filter by.",
+            required=False,
+        ),
+        year_beg=graphene.Argument(type=graphene.Int, required=False),
+        year_end=graphene.Argument(type=graphene.Int, required=False),
     )
 
     @staticmethod
@@ -149,7 +189,8 @@ class TypeStudies(graphene.ObjectType):
         # Filter to the `ModelStudy` records matching any of the `nct_ids`.
         query = query.filter(ModelStudy.nct_id.in_(nct_ids))
 
-        # Limit query to fields requested in the GraphQL query.
+        # Limit query to fields requested in the GraphQL query adding
+        # `load_only` and `joinedload` options as required.
         query = apply_requested_fields(
             info=info,
             query=query,
@@ -200,6 +241,84 @@ class TypeStudies(graphene.ObjectType):
         return objs
 
     @staticmethod
+    def _apply_query_filters(
+        query: sqlalchemy.orm.query.Query,
+        study_ids: List[int],
+        overall_statuses: Optional[List[EnumOverallStatus]] = None,
+        cities: Optional[List[str]] = None,
+        states: Optional[List[str]] = None,
+        countries: Optional[List[str]] = None,
+        intervention_types: Optional[List[EnumIntervention]] = None,
+        phases: Optional[List[EnumPhase]] = None,
+        study_types: Optional[List[EnumStudy]] = None,
+        year_beg: Union[int, None] = None,
+        year_end: Union[int, None] = None,
+    ):
+
+        # Limit studies to those with one of the defined IDs.
+        query = query.filter(ModelStudy.study_id.in_(study_ids))
+
+        # Apply an overall-status filter if any are defined.
+        if overall_statuses:
+            _members = [
+                EnumOverallStatus.get_member(value=str(_status))
+                for _status in overall_statuses
+            ]
+            query = query.filter(ModelStudy.overall_status.in_(_members))
+
+        # Join to the study facility locations and apply filters if any such
+        # filters are defined.
+        if cities or states or countries:
+            query = query.join(ModelStudy.locations)
+            query = query.join(ModelLocation.facility)
+            if cities:
+                query = query.filter(ModelFacility.city.in_(cities))
+            if states:
+                query = query.filter(ModelFacility.state.in_(states))
+            if countries:
+                query = query.filter(ModelFacility.country.in_(countries))
+
+        # Join to the study interventions and apply filters if any such filters
+        # are defined.
+        if intervention_types:
+            _members = [
+                EnumIntervention.get_member(value=str(_status))
+                for _status in intervention_types
+            ]
+            query = query.join(ModelStudy.interventions)
+            query = query.filter(
+                ModelIntervention.intervention_type.in_(_members)
+            )
+
+        # Apply an phase filter if any are defined.
+        if phases:
+            _members = [
+                EnumPhase.get_member(value=str(_status))
+                for _status in phases
+            ]
+            query = query.filter(ModelStudy.phase.in_(_members))
+
+        # Apply an study-type filter if any are defined.
+        if study_types:
+            _members = [
+                EnumStudy.get_member(value=str(_status))
+                for _status in study_types
+            ]
+            query = query.filter(ModelStudy.study_type.in_(_members))
+
+        # Filter studies the year of their start-date.
+        if year_beg:
+            query = query.filter(
+                ModelStudy.start_date >= datetime.date(year_beg, 1, 1)
+            )
+        if year_end:
+            query = query.filter(
+                ModelStudy.start_date <= datetime.date(year_end, 12, 31)
+            )
+
+        return query
+
+    @staticmethod
     def resolve_search(
         args: dict,
         info: graphene.ResolveInfo,
@@ -207,7 +326,7 @@ class TypeStudies(graphene.ObjectType):
         year_beg: Union[int, None] = None,
         year_end: Union[int, None] = None,
         do_include_children: Union[bool, None] = True,
-    ):
+    ) -> List[ModelStudy]:
         """Retrieves a list of `ModelStudy` objects matching several optional
         filters.
 
@@ -225,7 +344,7 @@ class TypeStudies(graphene.ObjectType):
                 provided descriptors.
 
         Returns:
-             list[StudyModel]: The list of matched `ModelStudy` objects or an
+             List[StudyModel]: The list of matched `ModelStudy` objects or an
                 empty list if no match was found.
         """
 
@@ -321,10 +440,10 @@ class TypeStudies(graphene.ObjectType):
         year_beg: Union[int, None] = None,
         year_end: Union[int, None] = None,
         order_by: Optional[str] = None,
-        order: Optional[EnumOrder] = None,
+        order: Optional[TypeEnumOrder] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-    ):
+    ) -> List[ModelStudy]:
 
         # Retrieve the session out of the context as the `get_query` method
         # automatically selects the model.
@@ -340,69 +459,24 @@ class TypeStudies(graphene.ObjectType):
             orm_class=ModelStudy,
         )
 
-        # Limit studies to those with one of the defined IDs.
-        query = query.filter(ModelStudy.study_id.in_(study_ids))
+        # Apply the different optional filters to the query.
+        query = TypeStudies._apply_query_filters(
+            query=query,
+            study_ids=study_ids,
+            overall_statuses=overall_statuses,
+            cities=cities,
+            states=states,
+            countries=countries,
+            intervention_types=intervention_types,
+            phases=phases,
+            study_types=study_types,
+            year_beg=year_beg,
+            year_end=year_end
+        )
 
-        # Apply an overall-status filter if any are defined.
-        if overall_statuses:
-            _members = [
-                EnumOverallStatus.get_member(value=str(_status))
-                for _status in overall_statuses
-            ]
-            query = query.filter(ModelStudy.overall_status.in_(_members))
-
-        # Join to the study facility locations and apply filters if any such
-        # filters are defined.
-        if cities or states or countries:
-            query = query.join(ModelStudy.locations)
-            query = query.join(ModelLocation.facility)
-            if cities:
-                query = query.filter(ModelFacility.city.in_(cities))
-            if states:
-                query = query.filter(ModelFacility.state.in_(states))
-            if countries:
-                query = query.filter(ModelFacility.country.in_(countries))
-
-        # Join to the study interventions and apply filters if any such filters
-        # are defined.
-        if intervention_types:
-            _members = [
-                EnumIntervention.get_member(value=str(_status))
-                for _status in intervention_types
-            ]
-            query = query.join(ModelStudy.interventions)
-            query = query.filter(
-                ModelIntervention.intervention_type.in_(_members)
-            )
-
-        # Apply an phase filter if any are defined.
-        if phases:
-            _members = [
-                EnumPhase.get_member(value=str(_status))
-                for _status in phases
-            ]
-            query = query.filter(ModelStudy.phase.in_(_members))
-
-        # Apply an study-type filter if any are defined.
-        if study_types:
-            _members = [
-                EnumStudy.get_member(value=str(_status))
-                for _status in study_types
-            ]
-            query = query.filter(ModelStudy.study_type.in_(_members))
-
-        # Filter studies the year of their start-date.
-        if year_beg:
-            query = query.filter(
-                ModelStudy.start_date >= datetime.date(year_beg, 1, 1)
-            )
-        if year_end:
-            query = query.filter(
-                ModelStudy.start_date <= datetime.date(year_end, 12, 31)
-            )
-
+        # Apply order (if defined).
         if order_by:
-            if order and order == EnumOrder.DESC.value:
+            if order and order == TypeEnumOrder.DESC.value:
                 query = query.order_by(getattr(ModelStudy, order_by).desc())
             else:
                 query = query.order_by(getattr(ModelStudy, order_by).asc())
@@ -418,3 +492,52 @@ class TypeStudies(graphene.ObjectType):
         objs = query.all()
 
         return objs
+
+    @staticmethod
+    def resolve_count(
+        args: dict,
+        info: graphene.ResolveInfo,
+        study_ids: List[int],
+        overall_statuses: Optional[List[TypeEnumOverallStatus]] = None,
+        cities: Optional[List[str]] = None,
+        states: Optional[List[str]] = None,
+        countries: Optional[List[str]] = None,
+        intervention_types: Optional[List[TypeEnumIntervention]] = None,
+        phases: Optional[List[TypeEnumPhase]] = None,
+        study_types: Optional[List[TypeEnumStudy]] = None,
+        year_beg: Union[int, None] = None,
+        year_end: Union[int, None] = None,
+    ) -> int:
+
+        # Retrieve the session out of the context as the `get_query` method
+        # automatically selects the model.
+        session = info.context.get("session")  # type: sqlalchemy.orm.Session
+
+        # Define the `COUNT(studies.study_id)` function.
+        func_count_studies = sqlalchemy_func.count(ModelStudy.study_id)
+
+        query = session.query(
+            func_count_studies,
+        )  # type: sqlalchemy.orm.query.Query
+
+        # Apply the different optional filters to the query.
+        query = TypeStudies._apply_query_filters(
+            query=query,
+            study_ids=study_ids,
+            overall_statuses=overall_statuses,
+            cities=cities,
+            states=states,
+            countries=countries,
+            intervention_types=intervention_types,
+            phases=phases,
+            study_types=study_types,
+            year_beg=year_beg,
+            year_end=year_end
+        )
+
+        count = 0
+        result = query.one_or_none()
+        if result:
+            count = result[0]
+
+        return count

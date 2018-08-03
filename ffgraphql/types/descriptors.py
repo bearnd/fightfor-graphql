@@ -10,6 +10,7 @@ from ffgraphql.types.mt_primitives import ModelDescriptor
 from ffgraphql.types.mt_primitives import ModelTreeNumber
 from ffgraphql.types.mt_primitives import ModelDescriptorSynonym
 from ffgraphql.types.mt_primitives import TypeDescriptor
+from ffgraphql.utils import apply_requested_fields
 
 
 class TypeDescriptors(graphene.ObjectType):
@@ -70,6 +71,14 @@ class TypeDescriptors(graphene.ObjectType):
         # Filter to the `ModelDescriptor` record matching `ui`.
         query = query.filter(ModelDescriptor.ui == ui)
 
+        # Limit query to fields requested in the GraphQL query adding
+        # `load_only` and `joinedload` options as required.
+        query = apply_requested_fields(
+            info=info,
+            query=query,
+            orm_class=ModelDescriptor,
+        )
+
         obj = query.first()
 
         return obj
@@ -106,8 +115,15 @@ class TypeDescriptors(graphene.ObjectType):
             ModelTreeNumber.tree_number.like("{}%".format(tree_number_prefix)),
         )
 
+        # Limit query to fields requested in the GraphQL query adding
+        # `load_only` and `joinedload` options as required.
+        query = apply_requested_fields(
+            info=info,
+            query=query,
+            orm_class=ModelDescriptor,
+        )
+
         objs = query.all()
-        print(objs)
 
         return objs
 
@@ -153,6 +169,14 @@ class TypeDescriptors(graphene.ObjectType):
 
         if limit is not None:
             query = query.limit(limit=limit)
+
+        # Limit query to fields requested in the GraphQL query adding
+        # `load_only` and `joinedload` options as required.
+        query = apply_requested_fields(
+            info=info,
+            query=query,
+            orm_class=ModelDescriptor,
+        )
 
         objs = query.all()
 
