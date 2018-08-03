@@ -195,6 +195,84 @@ class TypeStudies(graphene.ObjectType):
         return objs
 
     @staticmethod
+    def _apply_query_filters(
+        query: sqlalchemy.orm.query.Query,
+        study_ids: List[int],
+        overall_statuses: Optional[List[EnumOverallStatus]] = None,
+        cities: Optional[List[str]] = None,
+        states: Optional[List[str]] = None,
+        countries: Optional[List[str]] = None,
+        intervention_types: Optional[List[EnumIntervention]] = None,
+        phases: Optional[List[EnumPhase]] = None,
+        study_types: Optional[List[EnumStudy]] = None,
+        year_beg: Union[int, None] = None,
+        year_end: Union[int, None] = None,
+    ):
+
+        # Limit studies to those with one of the defined IDs.
+        query = query.filter(ModelStudy.study_id.in_(study_ids))
+
+        # Apply an overall-status filter if any are defined.
+        if overall_statuses:
+            _members = [
+                EnumOverallStatus.get_member(value=str(_status))
+                for _status in overall_statuses
+            ]
+            query = query.filter(ModelStudy.overall_status.in_(_members))
+
+        # Join to the study facility locations and apply filters if any such
+        # filters are defined.
+        if cities or states or countries:
+            query = query.join(ModelStudy.locations)
+            query = query.join(ModelLocation.facility)
+            if cities:
+                query = query.filter(ModelFacility.city.in_(cities))
+            if states:
+                query = query.filter(ModelFacility.state.in_(states))
+            if countries:
+                query = query.filter(ModelFacility.country.in_(countries))
+
+        # Join to the study interventions and apply filters if any such filters
+        # are defined.
+        if intervention_types:
+            _members = [
+                EnumIntervention.get_member(value=str(_status))
+                for _status in intervention_types
+            ]
+            query = query.join(ModelStudy.interventions)
+            query = query.filter(
+                ModelIntervention.intervention_type.in_(_members)
+            )
+
+        # Apply an phase filter if any are defined.
+        if phases:
+            _members = [
+                EnumPhase.get_member(value=str(_status))
+                for _status in phases
+            ]
+            query = query.filter(ModelStudy.phase.in_(_members))
+
+        # Apply an study-type filter if any are defined.
+        if study_types:
+            _members = [
+                EnumStudy.get_member(value=str(_status))
+                for _status in study_types
+            ]
+            query = query.filter(ModelStudy.study_type.in_(_members))
+
+        # Filter studies the year of their start-date.
+        if year_beg:
+            query = query.filter(
+                ModelStudy.start_date >= datetime.date(year_beg, 1, 1)
+            )
+        if year_end:
+            query = query.filter(
+                ModelStudy.start_date <= datetime.date(year_end, 12, 31)
+            )
+
+        return query
+
+    @staticmethod
     def resolve_search(
         args: dict,
         info: graphene.ResolveInfo,
@@ -335,66 +413,20 @@ class TypeStudies(graphene.ObjectType):
             orm_class=ModelStudy,
         )
 
-        # Limit studies to those with one of the defined IDs.
-        query = query.filter(ModelStudy.study_id.in_(study_ids))
-
-        # Apply an overall-status filter if any are defined.
-        if overall_statuses:
-            _members = [
-                EnumOverallStatus.get_member(value=str(_status))
-                for _status in overall_statuses
-            ]
-            query = query.filter(ModelStudy.overall_status.in_(_members))
-
-        # Join to the study facility locations and apply filters if any such
-        # filters are defined.
-        if cities or states or countries:
-            query = query.join(ModelStudy.locations)
-            query = query.join(ModelLocation.facility)
-            if cities:
-                query = query.filter(ModelFacility.city.in_(cities))
-            if states:
-                query = query.filter(ModelFacility.state.in_(states))
-            if countries:
-                query = query.filter(ModelFacility.country.in_(countries))
-
-        # Join to the study interventions and apply filters if any such filters
-        # are defined.
-        if intervention_types:
-            _members = [
-                EnumIntervention.get_member(value=str(_status))
-                for _status in intervention_types
-            ]
-            query = query.join(ModelStudy.interventions)
-            query = query.filter(
-                ModelIntervention.intervention_type.in_(_members)
-            )
-
-        # Apply an phase filter if any are defined.
-        if phases:
-            _members = [
-                EnumPhase.get_member(value=str(_status))
-                for _status in phases
-            ]
-            query = query.filter(ModelStudy.phase.in_(_members))
-
-        # Apply an study-type filter if any are defined.
-        if study_types:
-            _members = [
-                EnumStudy.get_member(value=str(_status))
-                for _status in study_types
-            ]
-            query = query.filter(ModelStudy.study_type.in_(_members))
-
-        # Filter studies the year of their start-date.
-        if year_beg:
-            query = query.filter(
-                ModelStudy.start_date >= datetime.date(year_beg, 1, 1)
-            )
-        if year_end:
-            query = query.filter(
-                ModelStudy.start_date <= datetime.date(year_end, 12, 31)
-            )
+        # Apply the different optional filters to the query.
+        query = TypeStudies._apply_query_filters(
+            query=query,
+            study_ids=study_ids,
+            overall_statuses=overall_statuses,
+            cities=cities,
+            states=states,
+            countries=countries,
+            intervention_types=intervention_types,
+            phases=phases,
+            study_types=study_types,
+            year_beg=year_beg,
+            year_end=year_end
+        )
 
         # Apply order (if defined).
         if order_by:
