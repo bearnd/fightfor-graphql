@@ -9,6 +9,9 @@ from ffgraphql.types.ct_primitives import TypeFacility
 from ffgraphql.types.ct_primitives import TypeIntervention
 from ffgraphql.types.mt_primitives import TypeDescriptor
 from ffgraphql.types.mt_primitives import TypeTreeNumber
+from ffgraphql.types.mt_primitives import TypeDescriptorSynonym
+from ffgraphql.types.mt_primitives import TypeConcept
+from ffgraphql.types.mt_primitives import TypeQualifier
 from ffgraphql.types.studies import TypeStudies
 from ffgraphql.types.descriptors import TypeDescriptors
 from ffgraphql.types.studies_stats import TypeCountStudiesCountry
@@ -56,6 +59,9 @@ schema = graphene.Schema(
         TypeIntervention,
         TypeDescriptor,
         TypeDescriptors,
+        TypeDescriptorSynonym,
+        TypeConcept,
+        TypeQualifier,
         TypeCountStudiesCountry,
         TypeStudiesStats,
         TypeTreeNumber,
