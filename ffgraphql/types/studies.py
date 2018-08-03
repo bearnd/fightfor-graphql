@@ -5,8 +5,9 @@ from typing import Union, List, Optional
 
 import sqlalchemy
 import sqlalchemy.orm
-from sqlalchemy.dialects import postgresql
 import graphene
+from sqlalchemy.dialects import postgresql
+from sqlalchemy import func as sqlalchemy_func
 
 from ffgraphql.types.ct_primitives import TypeStudy
 from ffgraphql.types.ct_primitives import ModelStudy
@@ -14,11 +15,15 @@ from ffgraphql.types.ct_primitives import ModelMeshTerm
 from ffgraphql.types.ct_primitives import ModelLocation
 from ffgraphql.types.ct_primitives import ModelFacility
 from ffgraphql.types.ct_primitives import ModelIntervention
+from ffgraphql.types.ct_primitives import TypeEnumOverallStatus
 from ffgraphql.types.ct_primitives import EnumOverallStatus
+from ffgraphql.types.ct_primitives import TypeEnumIntervention
 from ffgraphql.types.ct_primitives import EnumIntervention
+from ffgraphql.types.ct_primitives import TypeEnumPhase
 from ffgraphql.types.ct_primitives import EnumPhase
+from ffgraphql.types.ct_primitives import TypeEnumStudy
 from ffgraphql.types.ct_primitives import EnumStudy
-from ffgraphql.types.ct_primitives import EnumOrder
+from ffgraphql.types.ct_primitives import TypeEnumOrder
 from ffgraphql.types.mt_primitives import ModelTreeNumber
 from ffgraphql.types.mt_primitives import ModelDescriptor
 from ffgraphql.utils import apply_requested_fields
@@ -69,9 +74,7 @@ class TypeStudies(graphene.ObjectType):
             required=True
         ),
         overall_statuses=graphene.Argument(
-            type=graphene.List(
-                of_type=graphene.Enum.from_enum(EnumOverallStatus),
-            ),
+            type=graphene.List(of_type=TypeEnumOverallStatus),
             description="A list of overall statuses to filter by.",
             required=False,
         ),
@@ -91,33 +94,24 @@ class TypeStudies(graphene.ObjectType):
             required=False,
         ),
         intervention_types=graphene.Argument(
-            type=graphene.List(
-                of_type=graphene.Enum.from_enum(EnumIntervention),
-            ),
+            type=graphene.List(of_type=TypeEnumIntervention),
             description="A list of intevention types to filter by.",
             required=False,
         ),
         phases=graphene.Argument(
-            type=graphene.List(
-                of_type=graphene.Enum.from_enum(EnumPhase),
-            ),
+            type=graphene.List(of_type=TypeEnumPhase),
             description="A list of trial phases to filter by.",
             required=False,
         ),
         study_types=graphene.Argument(
-            type=graphene.List(
-                of_type=graphene.Enum.from_enum(EnumStudy),
-            ),
+            type=graphene.List(of_type=TypeEnumStudy),
             description="A list of study-types to filter by.",
             required=False,
         ),
         year_beg=graphene.Argument(type=graphene.Int, required=False),
         year_end=graphene.Argument(type=graphene.Int, required=False),
         order_by=graphene.Argument(type=graphene.String, required=False),
-        order=graphene.Argument(
-            type=EnumOrder,
-            required=False,
-        ),
+        order=graphene.Argument(type=TypeEnumOrder, required=False),
         offset=graphene.Argument(type=graphene.Int, required=False),
         limit=graphene.Argument(type=graphene.Int, required=False),
     )

@@ -14,7 +14,7 @@ from fform.orm_ct import PhaseType as EnumPhase
 from fform.orm_ct import StudyType as EnumStudy
 
 
-class EnumOrder(graphene.Enum):
+class TypeEnumOrder(graphene.Enum):
 
     ASC = "ASC"
     DESC = "DESC"
@@ -43,3 +43,12 @@ class TypeFacility(SQLAlchemyObjectType):
 class TypeIntervention(SQLAlchemyObjectType):
     class Meta:
         model = ModelIntervention
+
+
+TypeEnumOverallStatus = graphene.Enum.from_enum(EnumOverallStatus)
+
+TypeEnumIntervention = graphene.Enum.from_enum(EnumIntervention)
+
+TypeEnumPhase = graphene.Enum.from_enum(EnumPhase)
+
+TypeEnumStudy = graphene.Enum.from_enum(EnumStudy)
