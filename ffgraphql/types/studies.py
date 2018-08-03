@@ -202,7 +202,7 @@ class TypeStudies(graphene.ObjectType):
         year_beg: Union[int, None] = None,
         year_end: Union[int, None] = None,
         do_include_children: Union[bool, None] = True,
-    ):
+    ) -> List[ModelStudy]:
         """Retrieves a list of `ModelStudy` objects matching several optional
         filters.
 
@@ -220,7 +220,7 @@ class TypeStudies(graphene.ObjectType):
                 provided descriptors.
 
         Returns:
-             list[StudyModel]: The list of matched `ModelStudy` objects or an
+             List[StudyModel]: The list of matched `ModelStudy` objects or an
                 empty list if no match was found.
         """
 
@@ -316,10 +316,10 @@ class TypeStudies(graphene.ObjectType):
         year_beg: Union[int, None] = None,
         year_end: Union[int, None] = None,
         order_by: Optional[str] = None,
-        order: Optional[EnumOrder] = None,
+        order: Optional[TypeEnumOrder] = None,
         offset: Optional[int] = None,
         limit: Optional[int] = None,
-    ):
+    ) -> List[ModelStudy]:
 
         # Retrieve the session out of the context as the `get_query` method
         # automatically selects the model.
@@ -396,8 +396,9 @@ class TypeStudies(graphene.ObjectType):
                 ModelStudy.start_date <= datetime.date(year_end, 12, 31)
             )
 
+        # Apply order (if defined).
         if order_by:
-            if order and order == EnumOrder.DESC.value:
+            if order and order == TypeEnumOrder.DESC.value:
                 query = query.order_by(getattr(ModelStudy, order_by).desc())
             else:
                 query = query.order_by(getattr(ModelStudy, order_by).asc())
