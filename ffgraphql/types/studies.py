@@ -8,6 +8,7 @@ import sqlalchemy.orm
 import graphene
 from sqlalchemy.dialects import postgresql
 from sqlalchemy import func as sqlalchemy_func
+from graphene.utils.str_converters import to_snake_case
 
 from ffgraphql.types.ct_primitives import TypeStudy
 from ffgraphql.types.ct_primitives import ModelStudy
@@ -476,6 +477,11 @@ class TypeStudies(graphene.ObjectType):
 
         # Apply order (if defined).
         if order_by:
+            # Convert the order-by field to snake-case. This allows for fields
+            # to be defined in camel-case but won't error-out if the fields are
+            # already in snake-case.
+            order_by = to_snake_case(order_by)
+            
             if order and order == TypeEnumOrder.DESC.value:
                 query = query.order_by(getattr(ModelStudy, order_by).desc())
             else:
