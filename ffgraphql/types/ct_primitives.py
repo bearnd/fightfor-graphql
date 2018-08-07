@@ -8,6 +8,8 @@ from fform.orm_ct import MeshTerm as ModelMeshTerm
 from fform.orm_ct import Location as ModelLocation
 from fform.orm_ct import Facility as ModelFacility
 from fform.orm_ct import Intervention as ModelIntervention
+from fform.orm_ct import Condition as ModelCondition
+from fform.orm_ct import StudyMeshTerm as ModelStudyMeshTerm
 from fform.orm_ct import OverallStatusType as EnumOverallStatus
 from fform.orm_ct import InterventionType as EnumIntervention
 from fform.orm_ct import PhaseType as EnumPhase
@@ -43,6 +45,16 @@ class TypeFacility(SQLAlchemyObjectType):
 class TypeIntervention(SQLAlchemyObjectType):
     class Meta:
         model = ModelIntervention
+
+
+class TypeCondition(SQLAlchemyObjectType):
+    class Meta:
+        model = ModelCondition
+
+
+class TypeStudyMeshTerm(SQLAlchemyObjectType):
+    class Meta:
+        model = ModelStudyMeshTerm
 
 
 TypeEnumOverallStatus = graphene.Enum.from_enum(EnumOverallStatus)
