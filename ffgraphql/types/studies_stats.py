@@ -78,6 +78,13 @@ class TypeStudiesStats(graphene.ObjectType):
         limit=graphene.Argument(type=graphene.Int, required=False),
     )
 
+    get_unique_cities = graphene.List(
+        of_type=graphene.String,
+        study_ids=graphene.Argument(
+            type=graphene.List(of_type=graphene.Int),
+            required=True
+        ),
+    )
     @staticmethod
     def resolve_count_studies_by_country(
         args: dict,
@@ -276,3 +283,45 @@ class TypeStudiesStats(graphene.ObjectType):
         ]
 
         return objs
+
+    @staticmethod
+    def resolve_get_unique_cities(
+        args: dict,
+        info: graphene.ResolveInfo,
+        study_ids: List[int],
+    ) -> List[str]:
+        """Retrieves a list of unique cities out of a list of clinical-trial
+        studies.
+
+        Args:
+            args (dict): The resolver arguments.
+            info (graphene.ResolveInfo): The resolver info.
+            study_ids (List[int]): A list of Study IDs.
+
+        Returns:
+             list[str]: The list of unique cities.
+        """
+
+        # Retrieve the session out of the context as the `get_query` method
+        # automatically selects the model.
+        session = info.context.get("session")  # type: sqlalchemy.orm.Session
+
+        # Define the `DISTINCT(facilities.city)` function.
+        func_unique_cities = sqlalchemy_func.distinct(ModelFacility.city)
+
+        # Query out the unique cities of the studies.
+        query = session.query(func_unique_cities)  # type: sqlalchemy.orm.Query
+        query = query.join(ModelStudy.locations)
+        query = query.filter(ModelStudy.study_id.in_(study_ids))
+        query = query.join(
+            ModelFacility,
+            ModelLocation.facility_id == ModelFacility.facility_id
+        )
+
+        results = query.all()
+
+        # Unpack the cities out of the results.
+        cities = [result[0] for result in results]
+
+        return cities
+
