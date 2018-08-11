@@ -49,6 +49,20 @@ class TypeCountStudiesFacility(graphene.ObjectType):
     count_studies = graphene.Int(description="The number of studies.")
 
 
+class TypeDateRange(graphene.ObjectType):
+    """Graphene type representing a date-range."""
+
+    date_beg = graphene.Field(
+        type=graphene.Date,
+        description="The beginning of the date-range."
+    )
+
+    date_end = graphene.Field(
+        type=graphene.Date,
+        description="The end of the date-range."
+    )
+
+
 class TypeStudiesStats(graphene.ObjectType):
 
     count_studies_by_country = graphene.List(
@@ -96,6 +110,14 @@ class TypeStudiesStats(graphene.ObjectType):
 
     get_unique_countries = graphene.List(
         of_type=graphene.String,
+        study_ids=graphene.Argument(
+            type=graphene.List(of_type=graphene.Int),
+            required=True
+        ),
+    )
+
+    get_date_range = graphene.Field(
+        type=TypeDateRange,
         study_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.Int),
             required=True
@@ -425,3 +447,44 @@ class TypeStudiesStats(graphene.ObjectType):
         countries = [result[0] for result in results]
 
         return countries
+
+    @staticmethod
+    def resolve_get_date_range(
+        args: dict,
+        info: graphene.ResolveInfo,
+        study_ids: List[int],
+    ) -> TypeDateRange:
+        """Retrieves the date-range the start-date of the provided studies
+        falls within.
+
+        Args:
+            args (dict): The resolver arguments.
+            info (graphene.ResolveInfo): The resolver info.
+            study_ids (List[int]): A list of Study IDs.
+
+        Returns:
+             TypeDateRange: The study start-date range.
+        """
+
+        # Retrieve the session out of the context as the `get_query` method
+        # automatically selects the model.
+        session = info.context.get("session")  # type: sqlalchemy.orm.Session
+
+        # Define the `MIN(studies.start_date)` function.
+        func_min_date = sqlalchemy_func.min(ModelStudy.start_date)
+
+        # Define the `MAX(studies.start_date)` function.
+        func_max_date = sqlalchemy_func.max(ModelStudy.start_date)
+
+        # Query out the start-date range of the studies.
+        query = session.query(
+            func_min_date,
+            func_max_date,
+        )  # type: sqlalchemy.orm.Query
+        query = query.filter(ModelStudy.study_id.in_(study_ids))
+
+        results = query.all()
+
+        result = TypeDateRange(results[0][0], results[0][1])
+
+        return result
