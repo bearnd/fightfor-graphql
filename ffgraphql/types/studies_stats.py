@@ -49,6 +49,20 @@ class TypeCountStudiesFacility(graphene.ObjectType):
     count_studies = graphene.Int(description="The number of studies.")
 
 
+class TypeDateRange(graphene.ObjectType):
+    """Graphene type representing a date-range."""
+
+    date_beg = graphene.Field(
+        type=graphene.Date,
+        description="The beginning of the date-range."
+    )
+
+    date_end = graphene.Field(
+        type=graphene.Date,
+        description="The end of the date-range."
+    )
+
+
 class TypeStudiesStats(graphene.ObjectType):
 
     count_studies_by_country = graphene.List(
