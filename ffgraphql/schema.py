@@ -9,6 +9,7 @@ from ffgraphql.types.ct_primitives import TypeFacility
 from ffgraphql.types.ct_primitives import TypeIntervention
 from ffgraphql.types.ct_primitives import TypeCondition
 from ffgraphql.types.ct_primitives import TypeStudyMeshTerm
+from ffgraphql.types.ct_primitives import TypeEligibility
 from ffgraphql.types.mt_primitives import TypeDescriptor
 from ffgraphql.types.mt_primitives import TypeTreeNumber
 from ffgraphql.types.mt_primitives import TypeDescriptorSynonym
@@ -17,6 +18,10 @@ from ffgraphql.types.mt_primitives import TypeQualifier
 from ffgraphql.types.studies import TypeStudies
 from ffgraphql.types.descriptors import TypeDescriptors
 from ffgraphql.types.studies_stats import TypeCountStudiesCountry
+from ffgraphql.types.studies_stats import TypeCountStudiesFacility
+from ffgraphql.types.studies_stats import TypeCountStudiesOverallStatus
+from ffgraphql.types.studies_stats import TypeDateRange
+from ffgraphql.types.studies_stats import TypeAgeRange
 from ffgraphql.types.studies_stats import TypeStudiesStats
 
 
@@ -61,12 +66,17 @@ schema = graphene.Schema(
         TypeIntervention,
         TypeCondition,
         TypeStudyMeshTerm,
+        TypeEligibility,
         TypeDescriptor,
         TypeDescriptors,
         TypeDescriptorSynonym,
         TypeConcept,
         TypeQualifier,
         TypeCountStudiesCountry,
+        TypeCountStudiesFacility,
+        TypeCountStudiesOverallStatus,
+        TypeDateRange,
+        TypeAgeRange,
         TypeStudiesStats,
         TypeTreeNumber,
     ]
