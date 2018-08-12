@@ -9,6 +9,7 @@ from ffgraphql.types.ct_primitives import TypeFacility
 from ffgraphql.types.ct_primitives import TypeIntervention
 from ffgraphql.types.ct_primitives import TypeCondition
 from ffgraphql.types.ct_primitives import TypeStudyMeshTerm
+from ffgraphql.types.ct_primitives import TypeEligibility
 from ffgraphql.types.mt_primitives import TypeDescriptor
 from ffgraphql.types.mt_primitives import TypeTreeNumber
 from ffgraphql.types.mt_primitives import TypeDescriptorSynonym
@@ -65,6 +66,7 @@ schema = graphene.Schema(
         TypeIntervention,
         TypeCondition,
         TypeStudyMeshTerm,
+        TypeEligibility,
         TypeDescriptor,
         TypeDescriptors,
         TypeDescriptorSynonym,
