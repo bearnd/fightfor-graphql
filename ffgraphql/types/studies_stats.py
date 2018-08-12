@@ -63,6 +63,20 @@ class TypeDateRange(graphene.ObjectType):
     )
 
 
+class TypeAgeRange(graphene.ObjectType):
+    """Graphene type representing an age-range in seconds."""
+
+    age_beg = graphene.Field(
+        type=graphene.Float,
+        description="The beginning of the age-range."
+    )
+
+    age_end = graphene.Field(
+        type=graphene.Float,
+        description="The end of the age-range."
+    )
+
+
 class TypeStudiesStats(graphene.ObjectType):
 
     count_studies_by_country = graphene.List(
