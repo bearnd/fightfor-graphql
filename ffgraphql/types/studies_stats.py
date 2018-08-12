@@ -136,6 +136,9 @@ class TypeStudiesStats(graphene.ObjectType):
             type=graphene.List(of_type=graphene.Int),
             required=True
         ),
+        description=("Retrieves the start-date date-range of the provided "
+                     "studies.")
+    )
     )
 
     @staticmethod
@@ -468,8 +471,7 @@ class TypeStudiesStats(graphene.ObjectType):
         info: graphene.ResolveInfo,
         study_ids: List[int],
     ) -> TypeDateRange:
-        """Retrieves the date-range the start-date of the provided studies
-        falls within.
+        """Retrieves the start-date date-range of the provided studies.
 
         Args:
             args (dict): The resolver arguments.
