@@ -5,10 +5,12 @@ from typing import List, Optional
 import sqlalchemy.orm
 import graphene
 from sqlalchemy import func as sqlalchemy_func
+from sqlalchemy.dialects import postgresql
 
 from ffgraphql.types.ct_primitives import ModelStudy
 from ffgraphql.types.ct_primitives import ModelLocation
 from ffgraphql.types.ct_primitives import ModelFacility
+from ffgraphql.types.ct_primitives import ModelEligibility
 from ffgraphql.types.ct_primitives import TypeFacility
 from ffgraphql.types.ct_primitives import EnumOverallStatus
 from ffgraphql.utils import extract_requested_fields
@@ -139,6 +141,15 @@ class TypeStudiesStats(graphene.ObjectType):
         description=("Retrieves the start-date date-range of the provided "
                      "studies.")
     )
+
+    get_age_range = graphene.Field(
+        type=TypeAgeRange,
+        study_ids=graphene.Argument(
+            type=graphene.List(of_type=graphene.Int),
+            required=True
+        ),
+        description=("Retrieves the patient eligiblity age-range of the "
+                     "provided studies in seconds.")
     )
 
     @staticmethod
@@ -502,5 +513,66 @@ class TypeStudiesStats(graphene.ObjectType):
         results = query.all()
 
         result = TypeDateRange(results[0][0], results[0][1])
+
+        return result
+
+    @staticmethod
+    def resolve_get_age_range(
+        args: dict,
+        info: graphene.ResolveInfo,
+        study_ids: List[int],
+    ) -> TypeAgeRange:
+        """Retrieves the patient eligiblity age-range of the provided studies in
+        seconds.
+
+        Args:
+            args (dict): The resolver arguments.
+            info (graphene.ResolveInfo): The resolver info.
+            study_ids (List[int]): A list of Study IDs.
+
+        Returns:
+             TypeAgeRange: The study eligiblity age-range.
+        """
+
+        # Retrieve the session out of the context as the `get_query` method
+        # automatically selects the model.
+        session = info.context.get("session")  # type: sqlalchemy.orm.Session
+
+        # Define the function to calculate the minimum elligible age in seconds.
+        func_min_age_sec = sqlalchemy_func.min(
+            sqlalchemy_func.extract(
+                "EPOCH",
+                sqlalchemy_func.cast(
+                    ModelEligibility.minimum_age,
+                    postgresql.INTERVAL,
+                ),
+            ),
+        )
+
+        # Define the function to calculate the maximum elligible age in seconds.
+        func_max_age_sec = sqlalchemy_func.max(
+            sqlalchemy_func.extract(
+                "EPOCH",
+                sqlalchemy_func.cast(
+                    ModelEligibility.maximum_age,
+                    postgresql.INTERVAL,
+                ),
+            ),
+        )
+
+        # Query out the start-date range of the studies.
+        query = session.query(
+            func_min_age_sec,
+            func_max_age_sec,
+        )  # type: sqlalchemy.orm.Query
+        query = query.join(ModelStudy.eligibility)
+        query = query.filter(ModelStudy.study_id.in_(study_ids))
+        # Filter out eligibility age values of `N/A`.
+        query = query.filter(ModelEligibility.minimum_age != "N/A")
+        query = query.filter(ModelEligibility.maximum_age != "N/A")
+
+        results = query.all()
+
+        result = TypeAgeRange(results[0][0], results[0][1])
 
         return result
