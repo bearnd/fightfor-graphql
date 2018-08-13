@@ -16,6 +16,7 @@ from ffgraphql.types.ct_primitives import ModelMeshTerm
 from ffgraphql.types.ct_primitives import ModelLocation
 from ffgraphql.types.ct_primitives import ModelFacility
 from ffgraphql.types.ct_primitives import ModelIntervention
+from ffgraphql.types.ct_primitives import ModelEligibility
 from ffgraphql.types.ct_primitives import TypeEnumOverallStatus
 from ffgraphql.types.ct_primitives import EnumOverallStatus
 from ffgraphql.types.ct_primitives import TypeEnumIntervention
@@ -111,6 +112,8 @@ class TypeStudies(graphene.ObjectType):
         ),
         year_beg=graphene.Argument(type=graphene.Int, required=False),
         year_end=graphene.Argument(type=graphene.Int, required=False),
+        age_beg_sec=graphene.Argument(type=graphene.Int, required=False),
+        age_end_sec=graphene.Argument(type=graphene.Int, required=False),
         order_by=graphene.Argument(type=graphene.String, required=False),
         order=graphene.Argument(type=TypeEnumOrder, required=False),
         offset=graphene.Argument(type=graphene.Int, required=False),
@@ -161,6 +164,8 @@ class TypeStudies(graphene.ObjectType):
         ),
         year_beg=graphene.Argument(type=graphene.Int, required=False),
         year_end=graphene.Argument(type=graphene.Int, required=False),
+        age_beg_sec=graphene.Argument(type=graphene.Int, required=False),
+        age_end_sec=graphene.Argument(type=graphene.Int, required=False),
     )
 
     @staticmethod
@@ -254,6 +259,8 @@ class TypeStudies(graphene.ObjectType):
         study_types: Optional[List[EnumStudy]] = None,
         year_beg: Union[int, None] = None,
         year_end: Union[int, None] = None,
+        age_beg_sec: Union[int, None] = None,
+        age_end_sec: Union[int, None] = None,
     ):
 
         # Limit studies to those with one of the defined IDs.
@@ -316,6 +323,52 @@ class TypeStudies(graphene.ObjectType):
             query = query.filter(
                 ModelStudy.start_date <= datetime.date(year_end, 12, 31)
             )
+
+        # Filter studies by the minimum and maximum eligibility age.
+        if age_beg_sec or age_end_sec:
+            query = query.join(ModelStudy.eligibility)
+
+            # Define the function to convert the minimum eligible age of each
+            # study to seconds.
+            func_age_beg_sec = sqlalchemy_func.extract(
+                "EPOCH",
+                sqlalchemy_func.cast(
+                    ModelEligibility.minimum_age,
+                    postgresql.INTERVAL,
+                ),
+            )
+
+            # Define the function to convert the maximum eligible age of each
+            # study to seconds.
+            func_age_end_sec = sqlalchemy_func.extract(
+                "EPOCH",
+                sqlalchemy_func.cast(
+                    ModelEligibility.maximum_age,
+                    postgresql.INTERVAL,
+                ),
+            )
+
+            # If an minimum age is defined then only include studies without a
+            # minimum eligible age or a minimum age greater than or equal to the
+            # defined one.
+            if age_beg_sec:
+                query = query.filter(
+                    sqlalchemy.or_(
+                        func_age_beg_sec.is_(None),
+                        func_age_beg_sec >= age_beg_sec,
+                    ),
+                )
+
+            # If an maximum age is defined then only include studies without a
+            # maximum eligible age or a maximum age less than or equal to the
+            # defined one.
+            if age_end_sec:
+                query = query.filter(
+                    sqlalchemy.or_(
+                        func_age_end_sec.is_(None),
+                        func_age_end_sec <= age_end_sec,
+                    ),
+                )
 
         return query
 
@@ -440,6 +493,8 @@ class TypeStudies(graphene.ObjectType):
         study_types: Optional[List[EnumStudy]] = None,
         year_beg: Union[int, None] = None,
         year_end: Union[int, None] = None,
+        age_beg_sec: Union[int, None] = None,
+        age_end_sec: Union[int, None] = None,
         order_by: Optional[str] = None,
         order: Optional[TypeEnumOrder] = None,
         offset: Optional[int] = None,
@@ -472,7 +527,9 @@ class TypeStudies(graphene.ObjectType):
             phases=phases,
             study_types=study_types,
             year_beg=year_beg,
-            year_end=year_end
+            year_end=year_end,
+            age_beg_sec=age_beg_sec,
+            age_end_sec=age_end_sec,
         )
 
         # Apply order (if defined).
@@ -513,6 +570,8 @@ class TypeStudies(graphene.ObjectType):
         study_types: Optional[List[TypeEnumStudy]] = None,
         year_beg: Union[int, None] = None,
         year_end: Union[int, None] = None,
+        age_beg_sec: Union[int, None] = None,
+        age_end_sec: Union[int, None] = None,
     ) -> int:
 
         # Retrieve the session out of the context as the `get_query` method
@@ -538,7 +597,9 @@ class TypeStudies(graphene.ObjectType):
             phases=phases,
             study_types=study_types,
             year_beg=year_beg,
-            year_end=year_end
+            year_end=year_end,
+            age_beg_sec=age_beg_sec,
+            age_end_sec=age_end_sec,
         )
 
         count = 0
