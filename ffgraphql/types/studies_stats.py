@@ -567,9 +567,6 @@ class TypeStudiesStats(graphene.ObjectType):
         )  # type: sqlalchemy.orm.Query
         query = query.join(ModelStudy.eligibility)
         query = query.filter(ModelStudy.study_id.in_(study_ids))
-        # Filter out eligibility age values of `N/A`.
-        query = query.filter(ModelEligibility.minimum_age != "N/A")
-        query = query.filter(ModelEligibility.maximum_age != "N/A")
 
         results = query.all()
 
