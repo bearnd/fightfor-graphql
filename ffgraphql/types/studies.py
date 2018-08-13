@@ -26,6 +26,8 @@ from ffgraphql.types.ct_primitives import EnumPhase
 from ffgraphql.types.ct_primitives import TypeEnumStudy
 from ffgraphql.types.ct_primitives import EnumStudy
 from ffgraphql.types.ct_primitives import TypeEnumOrder
+from ffgraphql.types.ct_primitives import EnumGender
+from ffgraphql.types.ct_primitives import TypeEnumGender
 from ffgraphql.types.mt_primitives import ModelTreeNumber
 from ffgraphql.types.mt_primitives import ModelDescriptor
 from ffgraphql.utils import apply_requested_fields
@@ -110,6 +112,11 @@ class TypeStudies(graphene.ObjectType):
             description="A list of study-types to filter by.",
             required=False,
         ),
+        gender=graphene.Argument(
+            type=TypeEnumGender,
+            description="The patient-gender to filter by.",
+            required=False,
+        ),
         year_beg=graphene.Argument(type=graphene.Int, required=False),
         year_end=graphene.Argument(type=graphene.Int, required=False),
         age_beg_sec=graphene.Argument(type=graphene.Int, required=False),
@@ -160,6 +167,11 @@ class TypeStudies(graphene.ObjectType):
         study_types=graphene.Argument(
             type=graphene.List(of_type=TypeEnumStudy),
             description="A list of study-types to filter by.",
+            required=False,
+        ),
+        gender=graphene.Argument(
+            type=TypeEnumGender,
+            description="The patient-gender to filter by.",
             required=False,
         ),
         year_beg=graphene.Argument(type=graphene.Int, required=False),
@@ -257,6 +269,7 @@ class TypeStudies(graphene.ObjectType):
         intervention_types: Optional[List[EnumIntervention]] = None,
         phases: Optional[List[EnumPhase]] = None,
         study_types: Optional[List[EnumStudy]] = None,
+        gender: Optional[EnumGender] = None,
         year_beg: Union[int, None] = None,
         year_end: Union[int, None] = None,
         age_beg_sec: Union[int, None] = None,
@@ -313,6 +326,14 @@ class TypeStudies(graphene.ObjectType):
                 for _status in study_types
             ]
             query = query.filter(ModelStudy.study_type.in_(_members))
+
+        # Apply a gender filter if defined.
+        if gender:
+            query = query.join(ModelStudy.eligibility)
+            query = query.filter(
+                ModelEligibility.gender ==
+                EnumGender.get_member(value=str(gender)),
+            )
 
         # Filter studies the year of their start-date.
         if year_beg:
@@ -491,6 +512,7 @@ class TypeStudies(graphene.ObjectType):
         intervention_types: Optional[List[EnumIntervention]] = None,
         phases: Optional[List[EnumPhase]] = None,
         study_types: Optional[List[EnumStudy]] = None,
+        gender: Optional[EnumGender] = None,
         year_beg: Union[int, None] = None,
         year_end: Union[int, None] = None,
         age_beg_sec: Union[int, None] = None,
@@ -526,6 +548,7 @@ class TypeStudies(graphene.ObjectType):
             intervention_types=intervention_types,
             phases=phases,
             study_types=study_types,
+            gender=gender,
             year_beg=year_beg,
             year_end=year_end,
             age_beg_sec=age_beg_sec,
@@ -568,6 +591,7 @@ class TypeStudies(graphene.ObjectType):
         intervention_types: Optional[List[TypeEnumIntervention]] = None,
         phases: Optional[List[TypeEnumPhase]] = None,
         study_types: Optional[List[TypeEnumStudy]] = None,
+        gender: Optional[EnumGender] = None,
         year_beg: Union[int, None] = None,
         year_end: Union[int, None] = None,
         age_beg_sec: Union[int, None] = None,
@@ -596,6 +620,7 @@ class TypeStudies(graphene.ObjectType):
             intervention_types=intervention_types,
             phases=phases,
             study_types=study_types,
+            gender=gender,
             year_beg=year_beg,
             year_end=year_end,
             age_beg_sec=age_beg_sec,
