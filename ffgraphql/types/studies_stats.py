@@ -85,7 +85,7 @@ class TypeStudiesStats(graphene.ObjectType):
         of_type=TypeCountStudiesCountry,
         study_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.Int),
-            required=True
+            required=True,
         ),
         limit=graphene.Argument(type=graphene.Int, required=False),
     )
@@ -94,7 +94,7 @@ class TypeStudiesStats(graphene.ObjectType):
         of_type=TypeCountStudiesOverallStatus,
         study_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.Int),
-            required=True
+            required=True,
         ),
         limit=graphene.Argument(type=graphene.Int, required=False),
     )
@@ -103,7 +103,7 @@ class TypeStudiesStats(graphene.ObjectType):
         of_type=TypeCountStudiesFacility,
         study_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.Int),
-            required=True
+            required=True,
         ),
         limit=graphene.Argument(type=graphene.Int, required=False),
     )
@@ -112,7 +112,7 @@ class TypeStudiesStats(graphene.ObjectType):
         of_type=graphene.String,
         study_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.Int),
-            required=True
+            required=True,
         ),
     )
 
@@ -120,7 +120,7 @@ class TypeStudiesStats(graphene.ObjectType):
         of_type=graphene.String,
         study_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.Int),
-            required=True
+            required=True,
         ),
     )
 
@@ -128,7 +128,7 @@ class TypeStudiesStats(graphene.ObjectType):
         of_type=graphene.String,
         study_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.Int),
-            required=True
+            required=True,
         ),
     )
 
@@ -136,7 +136,7 @@ class TypeStudiesStats(graphene.ObjectType):
         type=TypeDateRange,
         study_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.Int),
-            required=True
+            required=False,
         ),
         description=("Retrieves the start-date date-range of the provided "
                      "studies.")
@@ -146,7 +146,7 @@ class TypeStudiesStats(graphene.ObjectType):
         type=TypeAgeRange,
         study_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.Int),
-            required=True
+            required=True,
         ),
         description=("Retrieves the patient eligiblity age-range of the "
                      "provided studies in seconds.")
@@ -480,7 +480,7 @@ class TypeStudiesStats(graphene.ObjectType):
     def resolve_get_date_range(
         args: dict,
         info: graphene.ResolveInfo,
-        study_ids: List[int],
+        study_ids: Optional[List[int]] = None,
     ) -> TypeDateRange:
         """Retrieves the start-date date-range of the provided studies.
 
@@ -508,7 +508,9 @@ class TypeStudiesStats(graphene.ObjectType):
             func_min_date,
             func_max_date,
         )  # type: sqlalchemy.orm.Query
-        query = query.filter(ModelStudy.study_id.in_(study_ids))
+
+        if study_ids:
+            query = query.filter(ModelStudy.study_id.in_(study_ids))
 
         results = query.all()
 
