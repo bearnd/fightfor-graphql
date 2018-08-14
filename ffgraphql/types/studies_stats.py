@@ -85,7 +85,7 @@ class TypeStudiesStats(graphene.ObjectType):
         of_type=TypeCountStudiesCountry,
         study_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.Int),
-            required=True
+            required=True,
         ),
         limit=graphene.Argument(type=graphene.Int, required=False),
     )
@@ -94,7 +94,7 @@ class TypeStudiesStats(graphene.ObjectType):
         of_type=TypeCountStudiesOverallStatus,
         study_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.Int),
-            required=True
+            required=True,
         ),
         limit=graphene.Argument(type=graphene.Int, required=False),
     )
@@ -103,7 +103,7 @@ class TypeStudiesStats(graphene.ObjectType):
         of_type=TypeCountStudiesFacility,
         study_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.Int),
-            required=True
+            required=True,
         ),
         limit=graphene.Argument(type=graphene.Int, required=False),
     )
@@ -112,7 +112,7 @@ class TypeStudiesStats(graphene.ObjectType):
         of_type=graphene.String,
         study_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.Int),
-            required=True
+            required=True,
         ),
     )
 
@@ -120,7 +120,7 @@ class TypeStudiesStats(graphene.ObjectType):
         of_type=graphene.String,
         study_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.Int),
-            required=True
+            required=True,
         ),
     )
 
@@ -128,7 +128,7 @@ class TypeStudiesStats(graphene.ObjectType):
         of_type=graphene.String,
         study_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.Int),
-            required=True
+            required=True,
         ),
     )
 
@@ -146,7 +146,7 @@ class TypeStudiesStats(graphene.ObjectType):
         type=TypeAgeRange,
         study_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.Int),
-            required=True
+            required=True,
         ),
         description=("Retrieves the patient eligiblity age-range of the "
                      "provided studies in seconds.")
