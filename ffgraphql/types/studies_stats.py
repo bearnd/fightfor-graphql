@@ -180,7 +180,9 @@ class TypeStudiesStats(graphene.ObjectType):
         session = info.context.get("session")  # type: sqlalchemy.orm.Session
 
         # Define the `COUNT(studies.study_id)` function.
-        func_count_studies = sqlalchemy_func.count(ModelStudy.study_id)
+        func_count_studies = sqlalchemy_func.count(
+            sqlalchemy_func.distinct(ModelStudy.study_id),
+        )
 
         # Query out the count of studies by country.
         query = session.query(
@@ -243,7 +245,9 @@ class TypeStudiesStats(graphene.ObjectType):
         session = info.context.get("session")  # type: sqlalchemy.orm.Session
 
         # Define the `COUNT(studies.study_id)` function.
-        func_count_studies = sqlalchemy_func.count(ModelStudy.study_id)
+        func_count_studies = sqlalchemy_func.count(
+            sqlalchemy_func.distinct(ModelStudy.study_id),
+        )
 
         # Query out the count of studies by overall-status.
         query = session.query(
@@ -301,7 +305,9 @@ class TypeStudiesStats(graphene.ObjectType):
         session = info.context.get("session")  # type: sqlalchemy.orm.Session
 
         # Define the `COUNT(studies.study_id)` function.
-        func_count_studies = sqlalchemy_func.count(ModelStudy.study_id)
+        func_count_studies = sqlalchemy_func.count(
+            sqlalchemy_func.distinct(ModelStudy.study_id),
+        )
 
         # Query out the count of studies by facility.
         query = session.query(
