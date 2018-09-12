@@ -23,4 +23,4 @@ app_fightfor_graphql:
 
   dependencies_pip_virtualenv:
     - ipython==6.1.0
-    - gunicorn==19.7.1
+    - gunicorn==19.9.0
