@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import re
 from typing import List, Dict, Union, Type, Optional
 
 import sqlalchemy
@@ -10,6 +11,23 @@ from graphql.language.ast import Field
 from graphene.utils.str_converters import to_snake_case
 
 from fform.orm_base import OrmBase
+
+
+def to_snake_case_plus(name: str) -> str:
+    """Extends the `to_snake_case` function to account for numbers in the name
+    separated by underscores.
+
+    Args:
+        name (str): The camel-case name to be converted to snake-case.
+
+    Returns
+        str: The converted name.
+    """
+    
+    name_new = to_snake_case(name=name)
+    for entry in list(set(re.findall("\d+", name_new))):
+        name_new = name_new.replace(entry, "_{}".format(entry))
+    return name_new
 
 
 def extract_requested_fields(
@@ -54,7 +72,7 @@ def extract_requested_fields(
 
         # Convert the key from camel-case to snake-case (if required).
         if do_convert_to_snake_case:
-            key = to_snake_case(name=key)
+            key = to_snake_case_plus(name=key)
 
         # Initialize `val` to `None`. Fields without nested-fields under them
         # will have a dictionary value of `None`.
