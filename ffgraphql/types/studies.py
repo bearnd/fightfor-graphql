@@ -13,8 +13,7 @@ from graphene.utils.str_converters import to_snake_case
 from ffgraphql.types.ct_primitives import TypeStudy
 from ffgraphql.types.ct_primitives import ModelStudy
 from ffgraphql.types.ct_primitives import ModelMeshTerm
-from ffgraphql.types.ct_primitives import ModelLocation
-from ffgraphql.types.ct_primitives import ModelFacility
+from ffgraphql.types.ct_primitives import ModelFacilityCanonical
 from ffgraphql.types.ct_primitives import ModelIntervention
 from ffgraphql.types.ct_primitives import ModelEligibility
 from ffgraphql.types.ct_primitives import TypeEnumOverallStatus
@@ -58,12 +57,27 @@ class TypeStudies(graphene.ObjectType):
                      "several filters."),
         mesh_descriptor_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.Int),
+            description=("MeSH descriptor primary-key IDs as they appear in "
+                         "the `mesh.descriptors` table."),
             required=True
         ),
-        year_beg=graphene.Argument(type=graphene.Int, required=False),
-        year_end=graphene.Argument(type=graphene.Int, required=False),
+        year_beg=graphene.Argument(
+            type=graphene.Int,
+            description=("The lower end of the year-range the study may start "
+                         "in."),
+            required=False,
+        ),
+        year_end=graphene.Argument(
+            type=graphene.Int,
+            description=("The upper end of the year-range the study may start "
+                         "in."),
+            required=False,
+        ),
         do_include_children=graphene.Argument(
             type=graphene.Boolean,
+            description=("Whether to analyze the MeSH descriptor tree and "
+                         "include the descriptor children when performing the"
+                         "search."),
             required=False,
             default_value=True,
         )
@@ -290,14 +304,21 @@ class TypeStudies(graphene.ObjectType):
         # Join to the study facility locations and apply filters if any such
         # filters are defined.
         if cities or states or countries:
-            query = query.join(ModelStudy.locations)
-            query = query.join(ModelLocation.facility)
+            query = query.join(ModelStudy.facilities_canonical)
             if cities:
-                query = query.filter(ModelFacility.city.in_(cities))
+                query = query.filter(
+                    ModelFacilityCanonical.locality.in_(cities),
+                )
             if states:
-                query = query.filter(ModelFacility.state.in_(states))
+                query = query.filter(
+                    ModelFacilityCanonical.administrative_area_level_1.in_(
+                        states,
+                    )
+                )
             if countries:
-                query = query.filter(ModelFacility.country.in_(countries))
+                query = query.filter(
+                    ModelFacilityCanonical.country.in_(countries),
+                )
 
         # Join to the study interventions and apply filters if any such filters
         # are defined.

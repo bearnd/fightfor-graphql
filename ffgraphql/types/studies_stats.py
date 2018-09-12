@@ -8,10 +8,9 @@ from sqlalchemy import func as sqlalchemy_func
 from sqlalchemy.dialects import postgresql
 
 from ffgraphql.types.ct_primitives import ModelStudy
-from ffgraphql.types.ct_primitives import ModelLocation
-from ffgraphql.types.ct_primitives import ModelFacility
+from ffgraphql.types.ct_primitives import ModelFacilityCanonical
 from ffgraphql.types.ct_primitives import ModelEligibility
-from ffgraphql.types.ct_primitives import TypeFacility
+from ffgraphql.types.ct_primitives import TypeFacilityCanonical
 from ffgraphql.types.ct_primitives import EnumOverallStatus
 from ffgraphql.utils import extract_requested_fields
 from ffgraphql.utils import apply_requested_fields
@@ -41,11 +40,11 @@ class TypeCountStudiesOverallStatus(graphene.ObjectType):
 
 class TypeCountStudiesFacility(graphene.ObjectType):
     """Graphene type representing a single result of an aggregation operation
-    calculating the number of clinical-trial studies by facility."""
+    calculating the number of clinical-trial studies by canonical facility."""
 
-    facility = graphene.Field(
-        type=TypeFacility,
-        description="The facility in which the studies are performed."
+    facility_canonical = graphene.Field(
+        type=TypeFacilityCanonical,
+        description="The canonical facility in which the studies are performed."
     )
 
     count_studies = graphene.Int(description="The number of studies.")
@@ -186,17 +185,13 @@ class TypeStudiesStats(graphene.ObjectType):
 
         # Query out the count of studies by country.
         query = session.query(
-            ModelFacility.country,
+            ModelFacilityCanonical.country,
             func_count_studies,
         )  # type: sqlalchemy.orm.Query
-        query = query.join(ModelStudy.locations)
+        query = query.join(ModelStudy.facilities_canonical)
         query = query.filter(ModelStudy.study_id.in_(study_ids))
-        query = query.join(
-            ModelFacility,
-            ModelLocation.facility_id == ModelFacility.facility_id
-        )
-        # Group by study overall-status.
-        query = query.group_by(ModelFacility.country)
+        # Group by study country.
+        query = query.group_by(ModelFacilityCanonical.country)
         # Order by the number of studies.
         query = query.order_by(func_count_studies.desc())
 
@@ -285,7 +280,7 @@ class TypeStudiesStats(graphene.ObjectType):
         limit: Optional[int] = None,
     ) -> List[TypeCountStudiesFacility]:
         """Creates a list of `TypeCountStudiesFacility` objects with the number
-        of clinical-trial studies per facility.
+        of clinical-trial studies per canonical facility.
 
         Args:
             args (dict): The resolver arguments.
@@ -311,17 +306,13 @@ class TypeStudiesStats(graphene.ObjectType):
 
         # Query out the count of studies by facility.
         query = session.query(
-            ModelFacility,
+            ModelFacilityCanonical,
             func_count_studies,
         )  # type: sqlalchemy.orm.Query
-        query = query.join(ModelStudy.locations)
+        query = query.join(ModelStudy.facilities_canonical)
         query = query.filter(ModelStudy.study_id.in_(study_ids))
-        query = query.join(
-            ModelFacility,
-            ModelLocation.facility_id == ModelFacility.facility_id
-        )
         # Group by study facility.
-        query = query.group_by(ModelFacility.facility_id)
+        query = query.group_by(ModelFacilityCanonical.facility_canonical_id)
         # Order by the number of studies.
         query = query.order_by(func_count_studies.desc())
 
@@ -330,13 +321,14 @@ class TypeStudiesStats(graphene.ObjectType):
             info=info,
             fields=info.field_asts,
             do_convert_to_snake_case=True,
-        )["count_studies_by_facility"]["facility"]
+        )["count_studies_by_facility"]["facility_canonical"]
 
-        # Limit query to `Facility` fields requested in the GraphQL query.
+        # Limit query to `FacilityCanonical` fields requested in the GraphQL
+        # query.
         query = apply_requested_fields(
             info=info,
             query=query,
-            orm_class=ModelFacility,
+            orm_class=ModelFacilityCanonical,
             fields={"facility": fields},
         )
 
@@ -350,7 +342,7 @@ class TypeStudiesStats(graphene.ObjectType):
         # objects.
         objs = [
             TypeCountStudiesFacility(
-                facility=result[0],
+                facility_canonical=result[0],
                 count_studies=result[1]
             ) for result in results
         ]
@@ -379,17 +371,15 @@ class TypeStudiesStats(graphene.ObjectType):
         # automatically selects the model.
         session = info.context.get("session")  # type: sqlalchemy.orm.Session
 
-        # Define the `DISTINCT(facilities.city)` function.
-        func_unique_cities = sqlalchemy_func.distinct(ModelFacility.city)
+        # Define the `DISTINCT(facilities_canonical.locality)` function.
+        func_unique_cities = sqlalchemy_func.distinct(
+            ModelFacilityCanonical.locality
+        )
 
         # Query out the unique cities of the studies.
         query = session.query(func_unique_cities)  # type: sqlalchemy.orm.Query
-        query = query.join(ModelStudy.locations)
+        query = query.join(ModelStudy.facilities_canonical)
         query = query.filter(ModelStudy.study_id.in_(study_ids))
-        query = query.join(
-            ModelFacility,
-            ModelLocation.facility_id == ModelFacility.facility_id
-        )
 
         results = query.all()
 
@@ -420,17 +410,16 @@ class TypeStudiesStats(graphene.ObjectType):
         # automatically selects the model.
         session = info.context.get("session")  # type: sqlalchemy.orm.Session
 
-        # Define the `DISTINCT(facilities.state)` function.
-        func_unique_states = sqlalchemy_func.distinct(ModelFacility.state)
+        # Define the
+        # `DISTINCT(facilities_canonical.administrative_area_level_1)` function.
+        func_unique_states = sqlalchemy_func.distinct(
+            ModelFacilityCanonical.administrative_area_level_1,
+        )
 
         # Query out the unique states of the studies.
         query = session.query(func_unique_states)  # type: sqlalchemy.orm.Query
-        query = query.join(ModelStudy.locations)
+        query = query.join(ModelStudy.facilities_canonical)
         query = query.filter(ModelStudy.study_id.in_(study_ids))
-        query = query.join(
-            ModelFacility,
-            ModelLocation.facility_id == ModelFacility.facility_id
-        )
 
         results = query.all()
 
@@ -461,19 +450,17 @@ class TypeStudiesStats(graphene.ObjectType):
         # automatically selects the model.
         session = info.context.get("session")  # type: sqlalchemy.orm.Session
 
-        # Define the `DISTINCT(facilities.country)` function.
-        func_unique_countries = sqlalchemy_func.distinct(ModelFacility.country)
+        # Define the `DISTINCT(facilities_canonical.country)` function.
+        func_unique_countries = sqlalchemy_func.distinct(
+            ModelFacilityCanonical.country,
+        )
 
         # Query out the unique countries of the studies.
         query = session.query(
             func_unique_countries,
         )  # type: sqlalchemy.orm.Query
-        query = query.join(ModelStudy.locations)
+        query = query.join(ModelStudy.facilities_canonical)
         query = query.filter(ModelStudy.study_id.in_(study_ids))
-        query = query.join(
-            ModelFacility,
-            ModelLocation.facility_id == ModelFacility.facility_id
-        )
 
         results = query.all()
 
