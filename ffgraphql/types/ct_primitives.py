@@ -7,6 +7,7 @@ from fform.orm_ct import Study as ModelStudy
 from fform.orm_ct import MeshTerm as ModelMeshTerm
 from fform.orm_ct import Location as ModelLocation
 from fform.orm_ct import Facility as ModelFacility
+from fform.orm_ct import FacilityCanonical as ModelFacilityCanonical
 from fform.orm_ct import Intervention as ModelIntervention
 from fform.orm_ct import Condition as ModelCondition
 from fform.orm_ct import StudyMeshTerm as ModelStudyMeshTerm
@@ -42,6 +43,11 @@ class TypeLocation(SQLAlchemyObjectType):
 class TypeFacility(SQLAlchemyObjectType):
     class Meta:
         model = ModelFacility
+
+
+class TypeFacilityCanonical(SQLAlchemyObjectType):
+    class Meta:
+        model = ModelFacilityCanonical
 
 
 class TypeIntervention(SQLAlchemyObjectType):
