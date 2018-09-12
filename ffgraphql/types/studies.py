@@ -58,12 +58,27 @@ class TypeStudies(graphene.ObjectType):
                      "several filters."),
         mesh_descriptor_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.Int),
+            description=("MeSH descriptor primary-key IDs as they appear in "
+                         "the `mesh.descriptors` table."),
             required=True
         ),
-        year_beg=graphene.Argument(type=graphene.Int, required=False),
-        year_end=graphene.Argument(type=graphene.Int, required=False),
+        year_beg=graphene.Argument(
+            type=graphene.Int,
+            description=("The lower end of the year-range the study may start "
+                         "in."),
+            required=False,
+        ),
+        year_end=graphene.Argument(
+            type=graphene.Int,
+            description=("The upper end of the year-range the study may start "
+                         "in."),
+            required=False,
+        ),
         do_include_children=graphene.Argument(
             type=graphene.Boolean,
+            description=("Whether to analyze the MeSH descriptor tree and "
+                         "include the descriptor children when performing the"
+                         "search."),
             required=False,
             default_value=True,
         )
