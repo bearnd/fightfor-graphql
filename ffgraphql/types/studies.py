@@ -1,7 +1,7 @@
 # coding=utf-8
 
 import datetime
-from typing import Union, List, Optional
+from typing import List, Optional
 
 import sqlalchemy
 import sqlalchemy.orm
@@ -111,6 +111,27 @@ class TypeStudies(graphene.ObjectType):
             description="A list of countries to filter by.",
             required=False,
         ),
+        current_location_longitude=graphene.Argument(
+            type=graphene.Float,
+            description=("The longitude of the current position from which "
+                         "only studies on facilities within a "
+                         "`distance_max_km` will be allowed."),
+            required=False,
+        ),
+        current_location_latitude=graphene.Argument(
+            type=graphene.Float,
+            description=("The latitude of the current position from which "
+                         "only studies on facilities within a "
+                         "`distance_max_km` will be allowed."),
+            required=False,
+        ),
+        distance_max_km=graphene.Argument(
+            type=graphene.Int,
+            description=("The maximum distance in kilometers from the current "
+                         "location coordinates within which studiy facilities "
+                         "will be allowed."),
+            required=False,
+        ),
         intervention_types=graphene.Argument(
             type=graphene.List(of_type=TypeEnumIntervention),
             description="A list of intevention types to filter by.",
@@ -166,6 +187,27 @@ class TypeStudies(graphene.ObjectType):
         countries=graphene.Argument(
             type=graphene.List(of_type=graphene.String),
             description="A list of countries to filter by.",
+            required=False,
+        ),
+        current_location_longitude=graphene.Argument(
+            type=graphene.Float,
+            description=("The longitude of the current position from which "
+                         "only studies on facilities within a "
+                         "`distance_max_km` will be allowed."),
+            required=False,
+        ),
+        current_location_latitude=graphene.Argument(
+            type=graphene.Float,
+            description=("The latitude of the current position from which "
+                         "only studies on facilities within a "
+                         "`distance_max_km` will be allowed."),
+            required=False,
+        ),
+        distance_max_km=graphene.Argument(
+            type=graphene.Int,
+            description=("The maximum distance in kilometers from the current "
+                         "location coordinates within which study facilities "
+                         "will be allowed."),
             required=False,
         ),
         intervention_types=graphene.Argument(
@@ -280,14 +322,17 @@ class TypeStudies(graphene.ObjectType):
         cities: Optional[List[str]] = None,
         states: Optional[List[str]] = None,
         countries: Optional[List[str]] = None,
+        current_location_longitude: Optional[int] = None,
+        current_location_latitude: Optional[int] = None,
+        distance_max_km: Optional[int] = None,
         intervention_types: Optional[List[EnumIntervention]] = None,
         phases: Optional[List[EnumPhase]] = None,
         study_types: Optional[List[EnumStudy]] = None,
         gender: Optional[EnumGender] = None,
-        year_beg: Union[int, None] = None,
-        year_end: Union[int, None] = None,
-        age_beg: Union[int, None] = None,
-        age_end: Union[int, None] = None,
+        year_beg: Optional[int] = None,
+        year_end: Optional[int] = None,
+        age_beg: Optional[int] = None,
+        age_end: Optional[int] = None,
     ):
 
         # Limit studies to those with one of the defined IDs.
@@ -319,6 +364,30 @@ class TypeStudies(graphene.ObjectType):
                 query = query.filter(
                     ModelFacilityCanonical.country.in_(countries),
                 )
+
+        if (
+            current_location_longitude and
+            current_location_latitude and
+            distance_max_km
+        ):
+            query = query.join(ModelStudy.facilities_canonical)
+            # Convert distance to meters.
+            distance_max_m = distance_max_km * 1000
+            # Define the function to calculate the distance between the given
+            # coordinates and study facilities.
+            func_distance = sqlalchemy_func.ST_Distance_Sphere(
+                sqlalchemy_func.ST_GeomFromText(
+                    "POINT({} {})".format(
+                        current_location_longitude,
+                        current_location_latitude
+                    ),
+                ),
+                ModelFacilityCanonical.coordinates,
+            )
+
+            # If a maximum age is defined then only include studies without a
+            # facility within the distance from the defined coordinates.
+            query = query.filter(func_distance <= distance_max_m)
 
         # Join to the study interventions and apply filters if any such filters
         # are defined.
@@ -424,10 +493,10 @@ class TypeStudies(graphene.ObjectType):
     def resolve_search(
         args: dict,
         info: graphene.ResolveInfo,
-        mesh_descriptor_ids: Union[List[int]],
-        year_beg: Union[int, None] = None,
-        year_end: Union[int, None] = None,
-        do_include_children: Union[bool, None] = True,
+        mesh_descriptor_ids: List[int],
+        year_beg: Optional[int] = None,
+        year_end: Optional[int] = None,
+        do_include_children: Optional[bool] = True,
     ) -> List[ModelStudy]:
         """Retrieves a list of `ModelStudy` objects matching several optional
         filters.
@@ -536,14 +605,17 @@ class TypeStudies(graphene.ObjectType):
         cities: Optional[List[str]] = None,
         states: Optional[List[str]] = None,
         countries: Optional[List[str]] = None,
+        current_location_longitude: Optional[int] = None,
+        current_location_latitude: Optional[int] = None,
+        distance_max_km: Optional[int] = None,
         intervention_types: Optional[List[EnumIntervention]] = None,
         phases: Optional[List[EnumPhase]] = None,
         study_types: Optional[List[EnumStudy]] = None,
         gender: Optional[EnumGender] = None,
-        year_beg: Union[int, None] = None,
-        year_end: Union[int, None] = None,
-        age_beg: Union[int, None] = None,
-        age_end: Union[int, None] = None,
+        year_beg: Optional[int] = None,
+        year_end: Optional[int] = None,
+        age_beg: Optional[int] = None,
+        age_end: Optional[int] = None,
         order_by: Optional[str] = None,
         order: Optional[TypeEnumOrder] = None,
         offset: Optional[int] = None,
@@ -572,6 +644,9 @@ class TypeStudies(graphene.ObjectType):
             cities=cities,
             states=states,
             countries=countries,
+            current_location_longitude=current_location_longitude,
+            current_location_latitude=current_location_latitude,
+            distance_max_km=distance_max_km,
             intervention_types=intervention_types,
             phases=phases,
             study_types=study_types,
@@ -615,14 +690,17 @@ class TypeStudies(graphene.ObjectType):
         cities: Optional[List[str]] = None,
         states: Optional[List[str]] = None,
         countries: Optional[List[str]] = None,
+        current_location_longitude: Optional[int] = None,
+        current_location_latitude: Optional[int] = None,
+        distance_max_km: Optional[int] = None,
         intervention_types: Optional[List[TypeEnumIntervention]] = None,
         phases: Optional[List[TypeEnumPhase]] = None,
         study_types: Optional[List[TypeEnumStudy]] = None,
         gender: Optional[EnumGender] = None,
-        year_beg: Union[int, None] = None,
-        year_end: Union[int, None] = None,
-        age_beg: Union[int, None] = None,
-        age_end: Union[int, None] = None,
+        year_beg: Optional[int] = None,
+        year_end: Optional[int] = None,
+        age_beg: Optional[int] = None,
+        age_end: Optional[int] = None,
     ) -> int:
 
         # Retrieve the session out of the context as the `get_query` method
@@ -644,6 +722,9 @@ class TypeStudies(graphene.ObjectType):
             cities=cities,
             states=states,
             countries=countries,
+            current_location_longitude=current_location_longitude,
+            current_location_latitude=current_location_latitude,
+            distance_max_km=distance_max_km,
             intervention_types=intervention_types,
             phases=phases,
             study_types=study_types,

@@ -384,7 +384,7 @@ class TypeStudiesStats(graphene.ObjectType):
         results = query.all()
 
         # Unpack the cities out of the results.
-        cities = [result[0] for result in results]
+        cities = [result[0] for result in results if result[0]]
 
         return cities
 
@@ -424,7 +424,7 @@ class TypeStudiesStats(graphene.ObjectType):
         results = query.all()
 
         # Unpack the states out of the results.
-        states = [result[0] for result in results]
+        states = [result[0] for result in results if result[0]]
 
         return states
 
@@ -465,7 +465,7 @@ class TypeStudiesStats(graphene.ObjectType):
         results = query.all()
 
         # Unpack the countries out of the results.
-        countries = [result[0] for result in results]
+        countries = [result[0] for result in results if result[0]]
 
         return countries
 
