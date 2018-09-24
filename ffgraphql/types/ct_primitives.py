@@ -7,6 +7,7 @@ from fform.orm_ct import Study as ModelStudy
 from fform.orm_ct import MeshTerm as ModelMeshTerm
 from fform.orm_ct import Location as ModelLocation
 from fform.orm_ct import Facility as ModelFacility
+from fform.orm_ct import StudyFacility as ModelStudyFacility
 from fform.orm_ct import FacilityCanonical as ModelFacilityCanonical
 from fform.orm_ct import Intervention as ModelIntervention
 from fform.orm_ct import Condition as ModelCondition
@@ -17,6 +18,7 @@ from fform.orm_ct import InterventionType as EnumIntervention
 from fform.orm_ct import PhaseType as EnumPhase
 from fform.orm_ct import StudyType as EnumStudy
 from fform.orm_ct import GenderType as EnumGender
+from fform.orm_ct import MeshTermType as EnumMeshTerm
 
 
 class TypeEnumOrder(graphene.Enum):
@@ -70,6 +72,11 @@ class TypeEligibility(SQLAlchemyObjectType):
         model = ModelEligibility
 
 
+class TypeStudyFacility(SQLAlchemyObjectType):
+    class Meta:
+        model = ModelStudyFacility
+
+
 TypeEnumOverallStatus = graphene.Enum.from_enum(EnumOverallStatus)
 
 TypeEnumIntervention = graphene.Enum.from_enum(EnumIntervention)
@@ -79,3 +86,5 @@ TypeEnumPhase = graphene.Enum.from_enum(EnumPhase)
 TypeEnumStudy = graphene.Enum.from_enum(EnumStudy)
 
 TypeEnumGender = graphene.Enum.from_enum(EnumGender)
+
+TypeEnumMeshTerm = graphene.Enum.from_enum(EnumMeshTerm)

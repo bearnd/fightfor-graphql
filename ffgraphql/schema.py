@@ -21,6 +21,7 @@ from ffgraphql.types.descriptors import TypeDescriptors
 from ffgraphql.types.studies_stats import TypeCountStudiesCountry
 from ffgraphql.types.studies_stats import TypeCountStudiesFacility
 from ffgraphql.types.studies_stats import TypeCountStudiesOverallStatus
+from ffgraphql.types.studies_stats import TypeCountStudiesFacilityMeshTerm
 from ffgraphql.types.studies_stats import TypeDateRange
 from ffgraphql.types.studies_stats import TypeAgeRange
 from ffgraphql.types.studies_stats import TypeStudiesStats
@@ -77,6 +78,7 @@ schema = graphene.Schema(
         TypeCountStudiesCountry,
         TypeCountStudiesFacility,
         TypeCountStudiesOverallStatus,
+        TypeCountStudiesFacilityMeshTerm,
         TypeDateRange,
         TypeAgeRange,
         TypeStudiesStats,
