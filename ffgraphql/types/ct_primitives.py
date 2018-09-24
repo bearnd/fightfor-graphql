@@ -18,6 +18,7 @@ from fform.orm_ct import InterventionType as EnumIntervention
 from fform.orm_ct import PhaseType as EnumPhase
 from fform.orm_ct import StudyType as EnumStudy
 from fform.orm_ct import GenderType as EnumGender
+from fform.orm_ct import MeshTermType as EnumMeshTerm
 
 
 class TypeEnumOrder(graphene.Enum):
@@ -85,3 +86,5 @@ TypeEnumPhase = graphene.Enum.from_enum(EnumPhase)
 TypeEnumStudy = graphene.Enum.from_enum(EnumStudy)
 
 TypeEnumGender = graphene.Enum.from_enum(EnumGender)
+
+TypeEnumMeshTerm = graphene.Enum.from_enum(EnumMeshTerm)
