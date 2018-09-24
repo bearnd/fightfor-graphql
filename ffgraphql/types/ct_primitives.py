@@ -7,6 +7,7 @@ from fform.orm_ct import Study as ModelStudy
 from fform.orm_ct import MeshTerm as ModelMeshTerm
 from fform.orm_ct import Location as ModelLocation
 from fform.orm_ct import Facility as ModelFacility
+from fform.orm_ct import StudyFacility as ModelStudyFacility
 from fform.orm_ct import FacilityCanonical as ModelFacilityCanonical
 from fform.orm_ct import Intervention as ModelIntervention
 from fform.orm_ct import Condition as ModelCondition
@@ -68,6 +69,11 @@ class TypeStudyMeshTerm(SQLAlchemyObjectType):
 class TypeEligibility(SQLAlchemyObjectType):
     class Meta:
         model = ModelEligibility
+
+
+class TypeStudyFacility(SQLAlchemyObjectType):
+    class Meta:
+        model = ModelStudyFacility
 
 
 TypeEnumOverallStatus = graphene.Enum.from_enum(EnumOverallStatus)
