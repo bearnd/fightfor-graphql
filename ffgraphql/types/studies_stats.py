@@ -8,10 +8,16 @@ from sqlalchemy import func as sqlalchemy_func
 from sqlalchemy.dialects import postgresql
 
 from ffgraphql.types.ct_primitives import ModelStudy
+from ffgraphql.types.ct_primitives import ModelStudyFacility
 from ffgraphql.types.ct_primitives import ModelFacilityCanonical
 from ffgraphql.types.ct_primitives import ModelEligibility
 from ffgraphql.types.ct_primitives import TypeFacilityCanonical
 from ffgraphql.types.ct_primitives import EnumOverallStatus
+from ffgraphql.types.ct_primitives import ModelMeshTerm
+from ffgraphql.types.ct_primitives import ModelStudyMeshTerm
+from ffgraphql.types.ct_primitives import TypeMeshTerm
+from ffgraphql.types.ct_primitives import TypeEnumMeshTerm
+from ffgraphql.types.ct_primitives import EnumMeshTerm
 from ffgraphql.utils import extract_requested_fields
 from ffgraphql.utils import apply_requested_fields
 
@@ -45,6 +51,24 @@ class TypeCountStudiesFacility(graphene.ObjectType):
     facility_canonical = graphene.Field(
         type=TypeFacilityCanonical,
         description="The canonical facility in which the studies are performed."
+    )
+
+    count_studies = graphene.Int(description="The number of studies.")
+
+
+class TypeCountStudiesFacilityMeshTerm(graphene.ObjectType):
+    """Graphene type representing a single result of an aggregation operation
+    calculating the number of clinical-trial studies canonical facility and
+    MeSH descriptor."""
+
+    facility_canonical = graphene.Field(
+        type=TypeFacilityCanonical,
+        description="The canonical facility in which the studies are performed."
+    )
+
+    mesh_term = graphene.Field(
+        type=TypeMeshTerm,
+        description="The MeSH term with which the studies are tagged."
     )
 
     count_studies = graphene.Int(description="The number of studies.")
@@ -104,6 +128,20 @@ class TypeStudiesStats(graphene.ObjectType):
             type=graphene.List(of_type=graphene.Int),
             required=True,
         ),
+        limit=graphene.Argument(type=graphene.Int, required=False),
+    )
+
+    count_studies_by_facility_mesh_term = graphene.List(
+        of_type=TypeCountStudiesFacilityMeshTerm,
+        study_ids=graphene.Argument(
+            type=graphene.List(of_type=graphene.Int),
+            required=True,
+        ),
+        facility_canonical_ids=graphene.Argument(
+            type=graphene.List(of_type=graphene.Int),
+            required=False,
+        ),
+        mesh_term_type=graphene.Argument(type=TypeEnumMeshTerm, required=False),
         limit=graphene.Argument(type=graphene.Int, required=False),
     )
 
@@ -344,6 +382,108 @@ class TypeStudiesStats(graphene.ObjectType):
             TypeCountStudiesFacility(
                 facility_canonical=result[0],
                 count_studies=result[1]
+            ) for result in results
+        ]
+
+        return objs
+
+    @staticmethod
+    def resolve_count_studies_by_facility_mesh_term(
+        args: dict,
+        info: graphene.ResolveInfo,
+        study_ids: List[int],
+        facility_canonical_ids: Optional[List[int]] = None,
+        mesh_term_type: Optional[EnumMeshTerm] = None,
+        limit: Optional[int] = None,
+    ) -> List[TypeCountStudiesFacilityMeshTerm]:
+        """Creates a list of `TypeCountStudiesFacilityMeshTerm` objects with
+        the number of clinical-trial studies per canonical facility and
+        mesh-term.
+
+        Args:
+            args (dict): The resolver arguments.
+            info (graphene.ResolveInfo): The resolver info.
+            study_ids (List[int]): A list of Study IDs.
+            facility_canonical_ids (Optional[List[int]]): A list of
+                FacilityCanonical IDs.
+            mesh_term_type (Optional[List[int]]): A list of FacilityCanonical
+                IDs.
+            limit (Optional[int]): The number of results to return. Defaults to
+                `None` in which case all results are returned.
+
+        Returns:
+             List[TypeCountStudiesFacilityMeshTerm]: The list of
+                `TypeCountStudiesFacilityMeshTerm` objects with the results of
+                the aggregation.
+        """
+
+        # Retrieve the session out of the context as the `get_query` method
+        # automatically selects the model.
+        session = info.context.get("session")  # type: sqlalchemy.orm.Session
+
+        # Define the `COUNT(studies.study_id)` function.
+        func_count_studies = sqlalchemy_func.count(
+            sqlalchemy_func.distinct(ModelStudy.study_id),
+        )
+
+        # Query out the count of studies by facility.
+        query = session.query(
+            ModelFacilityCanonical,
+            ModelMeshTerm,
+            func_count_studies,
+        )  # type: sqlalchemy.orm.Query
+        query = query.join(
+            ModelStudyFacility,
+            ModelFacilityCanonical.facility_canonical_id ==
+            ModelStudyFacility.facility_canonical_id,
+        )
+        query = query.join(
+            ModelStudy,
+            ModelStudyFacility.study_id == ModelStudy.study_id,
+        )
+        query = query.join(
+            ModelStudyMeshTerm,
+            ModelStudyMeshTerm.study_id == ModelStudy.study_id,
+        )
+        query = query.join(
+            ModelMeshTerm,
+            ModelMeshTerm.mesh_term_id == ModelStudyMeshTerm.mesh_term_id,
+        )
+
+        query = query.filter(ModelStudy.study_id.in_(study_ids))
+
+        if mesh_term_type:
+            _member = EnumMeshTerm.get_member(value=str(mesh_term_type))
+            query = query.filter(ModelStudyMeshTerm.mesh_term_type == _member)
+
+        if facility_canonical_ids:
+            query = query.filter(
+                ModelFacilityCanonical.facility_canonical_id.in_(
+                    facility_canonical_ids,
+                )
+            )
+
+        # Group by study facility.
+        query = query.group_by(
+            ModelFacilityCanonical.facility_canonical_id,
+            ModelMeshTerm.mesh_term_id,
+        )
+        # Order by the number of studies.
+        query = query.order_by(func_count_studies.desc())
+
+        # Apply limit (if defined).
+        if limit:
+            query = query.limit(limit=limit)
+
+        results = query.all()
+
+        # Wrap the results of the aggregation in `TypeCountStudiesFacility`
+        # objects.
+        objs = [
+            TypeCountStudiesFacilityMeshTerm(
+                facility_canonical=result[0],
+                mesh_term=result[1],
+                count_studies=result[2]
             ) for result in results
         ]
 
