@@ -16,6 +16,8 @@ from ffgraphql.types.mt_primitives import TypeTreeNumber
 from ffgraphql.types.mt_primitives import TypeDescriptorSynonym
 from ffgraphql.types.mt_primitives import TypeConcept
 from ffgraphql.types.mt_primitives import TypeQualifier
+from ffgraphql.types.pubmed_primitives import TypeCitation
+from ffgraphql.types.pubmed_primitives import TypeAffiliationCanonical
 from ffgraphql.types.studies import TypeStudies
 from ffgraphql.types.descriptors import TypeDescriptors
 from ffgraphql.types.studies_stats import TypeCountStudiesCountry
@@ -25,6 +27,10 @@ from ffgraphql.types.studies_stats import TypeCountStudiesFacilityMeshTerm
 from ffgraphql.types.studies_stats import TypeDateRange
 from ffgraphql.types.studies_stats import TypeAgeRange
 from ffgraphql.types.studies_stats import TypeStudiesStats
+from ffgraphql.types.citations import TypeCitations
+from ffgraphql.types.citations_stats import TypeCountCitationsCountry
+from ffgraphql.types.citations_stats import TypeCountCitationsAffiliation
+from ffgraphql.types.citations_stats import TypeCitationsStats
 
 
 class Query(graphene.ObjectType):
@@ -44,6 +50,16 @@ class Query(graphene.ObjectType):
         description="MeSH descriptors.",
     )
 
+    citations = graphene.Field(
+        type=TypeCitations,
+        description="PubMed citations.",
+    )
+
+    citations_stats = graphene.Field(
+        type=TypeCitationsStats,
+        description="PubMed citation-related statistics.",
+    )
+
     @staticmethod
     def resolve_studies_stats(args, info):
         return TypeStudiesStats
@@ -55,6 +71,14 @@ class Query(graphene.ObjectType):
     @staticmethod
     def resolve_descriptors(args, info):
         return TypeDescriptors
+
+    @staticmethod
+    def resolve_citations(args, info):
+        return TypeCitations
+
+    @staticmethod
+    def resolve_citations_stats(args, info):
+        return TypeCitationsStats
 
 
 schema = graphene.Schema(
@@ -83,5 +107,11 @@ schema = graphene.Schema(
         TypeAgeRange,
         TypeStudiesStats,
         TypeTreeNumber,
+        TypeCitation,
+        TypeCitations,
+        TypeAffiliationCanonical,
+        TypeCitationsStats,
+        TypeCountCitationsCountry,
+        TypeCountCitationsAffiliation,
     ]
 )
