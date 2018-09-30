@@ -21,15 +21,35 @@ from fform.orm_ct import GenderType as EnumGender
 from fform.orm_ct import MeshTermType as EnumMeshTerm
 
 
-class TypeEnumOrder(graphene.Enum):
+TypeEnumOverallStatus = graphene.Enum.from_enum(EnumOverallStatus)
 
-    ASC = "ASC"
-    DESC = "DESC"
+TypeEnumPhase = graphene.Enum.from_enum(EnumPhase)
+
+TypeEnumStudy = graphene.Enum.from_enum(EnumStudy)
 
 
 class TypeStudy(SQLAlchemyObjectType):
+
+    overall_status = TypeEnumOverallStatus()
+    phase = TypeEnumPhase()
+    study_type = TypeEnumStudy()
+
     class Meta:
         model = ModelStudy
+        exclude_fields = [
+            "overall_status",
+            "phase",
+            "study_type",
+        ]
+
+    def resolve_overall_status(self, info, **kwargs):
+        return self.overall_status
+
+    def resolve_phase(self, info, **kwargs):
+        return self.phase
+
+    def resolve_study_type(self, info, **kwargs):
+        return self.study_type
 
 
 class TypeMeshTerm(SQLAlchemyObjectType):
@@ -67,9 +87,19 @@ class TypeStudyMeshTerm(SQLAlchemyObjectType):
         model = ModelStudyMeshTerm
 
 
+TypeEnumGender = graphene.Enum.from_enum(EnumGender)
+
+
 class TypeEligibility(SQLAlchemyObjectType):
+
+    gender = TypeEnumGender()
+
     class Meta:
         model = ModelEligibility
+        exclude_fields = ["gender"]
+
+    def resolve_gender(self, info, **kwargs):
+        return self.gender
 
 
 class TypeStudyFacility(SQLAlchemyObjectType):
@@ -77,14 +107,14 @@ class TypeStudyFacility(SQLAlchemyObjectType):
         model = ModelStudyFacility
 
 
-TypeEnumOverallStatus = graphene.Enum.from_enum(EnumOverallStatus)
+class TypeEnumOrder(graphene.Enum):
+
+    ASC = "ASC"
+    DESC = "DESC"
+
 
 TypeEnumIntervention = graphene.Enum.from_enum(EnumIntervention)
 
-TypeEnumPhase = graphene.Enum.from_enum(EnumPhase)
 
-TypeEnumStudy = graphene.Enum.from_enum(EnumStudy)
-
-TypeEnumGender = graphene.Enum.from_enum(EnumGender)
 
 TypeEnumMeshTerm = graphene.Enum.from_enum(EnumMeshTerm)

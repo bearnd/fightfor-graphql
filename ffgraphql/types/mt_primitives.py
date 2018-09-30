@@ -12,6 +12,7 @@ from fform.orm_mt import Qualifier as ModelQualifier
 class TypeDescriptor(SQLAlchemyObjectType):
     class Meta:
         model = ModelDescriptor
+        exclude_fields = ["descriptor_class"]
 
 
 class TypeTreeNumber(SQLAlchemyObjectType):

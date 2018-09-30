@@ -2,35 +2,62 @@
 
 import graphene
 
-from ffgraphql.types.ct_primitives import TypeStudy
-from ffgraphql.types.ct_primitives import TypeMeshTerm
-from ffgraphql.types.ct_primitives import TypeLocation
-from ffgraphql.types.ct_primitives import TypeFacility
-from ffgraphql.types.ct_primitives import TypeFacilityCanonical
-from ffgraphql.types.ct_primitives import TypeIntervention
-from ffgraphql.types.ct_primitives import TypeCondition
-from ffgraphql.types.ct_primitives import TypeStudyMeshTerm
-from ffgraphql.types.ct_primitives import TypeEligibility
-from ffgraphql.types.mt_primitives import TypeDescriptor
-from ffgraphql.types.mt_primitives import TypeTreeNumber
-from ffgraphql.types.mt_primitives import TypeDescriptorSynonym
-from ffgraphql.types.mt_primitives import TypeConcept
-from ffgraphql.types.mt_primitives import TypeQualifier
-from ffgraphql.types.pubmed_primitives import TypeCitation
-from ffgraphql.types.pubmed_primitives import TypeAffiliationCanonical
+from ffgraphql.types.ct_primitives import (
+    TypeEnumOverallStatus,
+    TypeStudy,
+    TypeMeshTerm,
+    TypeLocation,
+    TypeFacility,
+    TypeFacilityCanonical,
+    TypeIntervention,
+    TypeCondition,
+    TypeStudyMeshTerm,
+    TypeEligibility,
+    TypeStudyFacility,
+    TypeEnumOrder,
+    TypeEnumIntervention,
+    TypeEnumPhase,
+    TypeEnumStudy,
+    TypeEnumGender,
+    TypeEnumMeshTerm,
+)
+from ffgraphql.types.mt_primitives import (
+    TypeDescriptor,
+    TypeTreeNumber,
+    TypeDescriptorSynonym,
+    TypeConcept,
+    TypeQualifier,
+)
+from ffgraphql.types.pubmed_primitives import (
+    TypeCitation,
+    TypeArticle,
+    TypeJournalInfo,
+    TypeJournal,
+    TypeChemical,
+    TypePubMedDescriptor,
+    TypePubMedQualifier,
+    TypeCitationDescriptorQualifier,
+    TypeAffiliationCanonical,
+    TypeArticleAuthorAffiliation,
+    TypeEnumJournalIssn,
+)
 from ffgraphql.types.studies import TypeStudies
 from ffgraphql.types.descriptors import TypeDescriptors
-from ffgraphql.types.studies_stats import TypeCountStudiesCountry
-from ffgraphql.types.studies_stats import TypeCountStudiesFacility
-from ffgraphql.types.studies_stats import TypeCountStudiesOverallStatus
-from ffgraphql.types.studies_stats import TypeCountStudiesFacilityMeshTerm
-from ffgraphql.types.studies_stats import TypeDateRange
-from ffgraphql.types.studies_stats import TypeAgeRange
-from ffgraphql.types.studies_stats import TypeStudiesStats
 from ffgraphql.types.citations import TypeCitations
-from ffgraphql.types.citations_stats import TypeCountCitationsCountry
-from ffgraphql.types.citations_stats import TypeCountCitationsAffiliation
-from ffgraphql.types.citations_stats import TypeCitationsStats
+from ffgraphql.types.studies_stats import (
+    TypeCountStudiesCountry,
+    TypeCountStudiesOverallStatus,
+    TypeCountStudiesFacility,
+    TypeCountStudiesFacilityMeshTerm,
+    TypeDateRange,
+    TypeAgeRange,
+    TypeStudiesStats,
+)
+from ffgraphql.types.citations_stats import (
+    TypeCountCitationsCountry,
+    TypeCountCitationsAffiliation,
+    TypeCitationsStats,
+)
 
 
 class Query(graphene.ObjectType):
@@ -84,8 +111,9 @@ class Query(graphene.ObjectType):
 schema = graphene.Schema(
     query=Query,
     types=[
+        # Clinical-trial primitives.
+        TypeEnumOverallStatus,
         TypeStudy,
-        TypeStudies,
         TypeMeshTerm,
         TypeLocation,
         TypeFacility,
@@ -94,24 +122,48 @@ schema = graphene.Schema(
         TypeCondition,
         TypeStudyMeshTerm,
         TypeEligibility,
+        TypeStudyFacility,
+        TypeEnumOrder,
+        TypeEnumIntervention,
+        TypeEnumPhase,
+        TypeEnumStudy,
+        TypeEnumGender,
+        TypeEnumMeshTerm,
+        # MeSH term primitives.
         TypeDescriptor,
-        TypeDescriptors,
+        TypeTreeNumber,
         TypeDescriptorSynonym,
         TypeConcept,
         TypeQualifier,
+        # PubMed primitives.
+        TypeCitation,
+        TypeArticle,
+        TypeJournalInfo,
+        TypeJournal,
+        TypeChemical,
+        TypePubMedDescriptor,
+        TypePubMedQualifier,
+        TypeCitationDescriptorQualifier,
+        TypeAffiliationCanonical,
+        TypeArticleAuthorAffiliation,
+        TypeEnumJournalIssn,
+        # Clinical trials studies.
+        TypeStudies,
+        # MeSH descriptors.
+        TypeDescriptors,
+        # PubMed citations.
+        TypeCitations,
+        # Clinical trials study statistics.
         TypeCountStudiesCountry,
-        TypeCountStudiesFacility,
         TypeCountStudiesOverallStatus,
+        TypeCountStudiesFacility,
         TypeCountStudiesFacilityMeshTerm,
         TypeDateRange,
         TypeAgeRange,
         TypeStudiesStats,
-        TypeTreeNumber,
-        TypeCitation,
-        TypeCitations,
-        TypeAffiliationCanonical,
-        TypeCitationsStats,
+        # PubMed citation statistics.
         TypeCountCitationsCountry,
         TypeCountCitationsAffiliation,
+        TypeCitationsStats,
     ]
 )
