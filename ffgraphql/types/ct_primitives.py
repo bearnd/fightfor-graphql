@@ -82,9 +82,21 @@ class TypeCondition(SQLAlchemyObjectType):
         model = ModelCondition
 
 
+TypeEnumMeshTerm = graphene.Enum.from_enum(EnumMeshTerm)
+
+
 class TypeStudyMeshTerm(SQLAlchemyObjectType):
+
+    mesh_term_type = TypeEnumMeshTerm()
+
     class Meta:
         model = ModelStudyMeshTerm
+        exclude_fields = [
+            "mesh_term_type",
+        ]
+
+    def resolve_mesh_term_type(self, info, **kwargs):
+        return self.mesh_term_type
 
 
 TypeEnumGender = graphene.Enum.from_enum(EnumGender)
@@ -114,7 +126,3 @@ class TypeEnumOrder(graphene.Enum):
 
 
 TypeEnumIntervention = graphene.Enum.from_enum(EnumIntervention)
-
-
-
-TypeEnumMeshTerm = graphene.Enum.from_enum(EnumMeshTerm)
