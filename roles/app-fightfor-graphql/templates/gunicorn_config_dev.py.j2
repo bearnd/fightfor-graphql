@@ -5,19 +5,19 @@ gunicorn.SERVER_SOFTWARE = 'fightfor-graphql'
 
 # set the socket to bind on (use 0.0.0.0 for bare deploy)
 # this can also be set programatically via the -b flag
-bind = '{{ app_fightfor_graphql.gunicorn.host }}:{{ app_fightfor_graphql.gunicorn.port }}'
+bind = '{{ config.dev.gunicorn.host }}:{{ config.dev.gunicorn.port }}'
 
 # set the maximum number of pending transactions before an error is returned
 backlog = 8192
 
 #set workers
-workers = {{ app_fightfor_graphql.gunicorn.workers }}
+workers = {{ config.dev.gunicorn.workers }}
 
 # set threads (optimize for cores * 2-4?)
-threads = {{ app_fightfor_graphql.gunicorn.threads }}
+threads = {{ config.dev.gunicorn.threads }}
 
 # set worker class ('sync' is good for normal workloads)
-worker_class = {{ app_fightfor_graphql.gunicorn.worker_class }}
+worker_class = '{{ config.dev.gunicorn.worker_class }}'
 
 # set maximum number of simultaneous client connections per worker process
 worker_connections = 4096
@@ -29,10 +29,10 @@ max_requests = 40960
 max_requests_jitter = 7040
 
 # set connection timeout for killing a worker (async jobs still communicate)
-timeout = {{ app_fightfor_graphql.gunicorn.timeout }}
+timeout = {{ config.dev.gunicorn.timeout }}
 
 # set time to finish services before restart when signal is received
-graceful_timeout = 60
+graceful_timeout = {{ config.dev.gunicorn.timeout }}
 
 # set keepalive HTTP connection wait time for next request (in seconds)
 keepalive = 2

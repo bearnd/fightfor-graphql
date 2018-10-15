@@ -39,7 +39,7 @@ Vagrant.configure("2") do |config|
         end
 
         ansible.extra_vars = {
-            "app_fightfor_graphql"=> {is_vagrant: true},
+            is_vagrant: true,
         }
     end
 end
