@@ -13,12 +13,12 @@ class UnhandledError(Exception):
 
 
 class ConfigFileNotFound(Exception):
-    """Exception raised when a JSON configuration file is missing."""
+    """ Exception raised when a JSON configuration file is missing."""
     def __init__(self, message, *args):
         super(ConfigFileNotFound, self).__init__(message, *args)
 
 
 class ConfigFileInvalid(Exception):
-    """Exception raised when a JSON configuration file is invalid."""
+    """ Exception raised when a JSON configuration file is invalid."""
     def __init__(self, message, *args):
         super(ConfigFileInvalid, self).__init__(message, *args)
