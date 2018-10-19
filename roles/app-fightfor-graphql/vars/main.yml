@@ -91,10 +91,6 @@ config:
     sql_password: "{{ sql_password }}"
     sql_db: "test"
 
-    # GraphiQL Settings.
-    do_enable_graphiql: True
-    path_graphiql: "/home/vagrant/fightfor-graphql/graphiql"
-
     # Gunicorn Configuration Settings.
     gunicorn:
       host: "0.0.0.0"
@@ -123,10 +119,6 @@ config:
     sql_password: "{{ sql_password }}"
     sql_db: "fightfor"
 
-    # GraphiQL Settings.
-    do_enable_graphiql: True
-    path_graphiql: "/home/vagrant/fightfor-graphql/graphiql"
-
     # Gunicorn Configuration Settings.
     gunicorn:
       host: "0.0.0.0"
@@ -154,10 +146,6 @@ config:
     sql_username: "{{ system.user }}"
     sql_password: "{{ sql_password }}"
     sql_db: "fightfor"
-
-    # GraphiQL Settings.
-    do_enable_graphiql: False
-    path_graphiql:
 
     # Gunicorn Configuration Settings.
     gunicorn:

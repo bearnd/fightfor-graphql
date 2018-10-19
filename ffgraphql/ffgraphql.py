@@ -54,8 +54,6 @@ def main(filename_config_file=None):
     api = create_api(
         schema=schema,
         scoped_session=scoped_session,
-        do_enable_graphiql=cfg.do_enable_graphiql,
-        path_graphiql=cfg.path_graphiql,
         logger_level=cfg.logger_level,
     )
 
