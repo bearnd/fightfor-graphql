@@ -52,6 +52,7 @@ def main(filename_config_file=None):
     scoped_session = sqlalchemy.orm.scoped_session(dal.session_factory)
 
     api = create_api(
+        cfg=cfg,
         schema=schema,
         scoped_session=scoped_session,
         logger_level=cfg.logger_level,
