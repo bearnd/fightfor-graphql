@@ -1,40 +1,39 @@
 # coding=utf-8
 
-import sqlalchemy.orm
+import attrdict
 import falcon
 import graphene
+import sqlalchemy.orm
 
 from ffgraphql.loggers import create_logger
+from ffgraphql.middlewares.auth0 import MiddlewareCors
+from ffgraphql.middlewares.auth0 import MiddlewareAuth0
 from ffgraphql.resources import ResourceGraphQlSqlAlchemy
-from ffgraphql.resources import ResourceGraphiQL
 
 
 def create_api(
+    cfg: attrdict.AttrDict,
     schema: graphene.Schema,
     scoped_session: sqlalchemy.orm.scoped_session,
-    do_enable_graphiql: bool,
-    path_graphiql: str,
     logger_level: str,
 ):
-    """Creates a Falcon API and adds resources for the GraphQL and GraphiQL
-    endpoints.
+    """Creates a Falcon API and adds resources for the GraphQL endpoint.
 
     Args:
+        cfg (attrdict.Attrdict): The application configuration loaded with the
+            methods under the `config.py` module.
         schema (graphene.Schema): An instance of the Graphene schema to expose
             via the GraphQL endpoint.
         scoped_session (sqlalchemy.orm.scoped_session): A SQLAlchemy
             scoped-session that will be used to perform the interaction with
             the SQL database.
-        do_enable_graphiql (bool): Whether to expose the GraphiQL endpoint or
-            not.
-        path_graphiql (str): The path to the GraphiQL distribution that will be
-            exposed via the GraphiQL endpoint.
         logger_level (str): The logger level to be set in the Falcon resource
             classes.
 
     Returns:
         falcon.api.API: The instantiate Falcon API.
     """
+
     # Create logger.
     logger = create_logger(
         logger_name=__name__,
@@ -42,7 +41,19 @@ def create_api(
     )
 
     # Create the API.
-    api = falcon.API()
+    api = falcon.API(
+        middleware=[
+            # Instantiate and add the CORS middleware.
+            MiddlewareCors(logger_level=logger_level),
+            # Instantiate and add the Auth0 authentication middleware.
+            MiddlewareAuth0(
+                auth0_domain=cfg.auth0.domain,
+                auth0_audience=cfg.auth0.audience,
+                auth0_jwks_url=cfg.auth0.jwks_url,
+                logger_level=logger_level,
+            ),
+        ],
+    )
 
     msg_fmt = u"Initializing API resources."
     logger.info(msg_fmt)
@@ -55,21 +66,6 @@ def create_api(
             scoped_session=scoped_session,
         )
     )
-
-    # Add the GraphiQL routes (if defined).
-    if do_enable_graphiql:
-        api.add_route(
-            uri_template="/graphiql/",
-            resource=ResourceGraphiQL(
-                path_graphiql=path_graphiql,
-            )
-        )
-        api.add_route(
-            uri_template="/graphiql/{static_file}",
-            resource=ResourceGraphiQL(
-                path_graphiql=path_graphiql,
-            )
-        )
 
     msg_fmt = u"API initialization complete."
     logger.info(msg_fmt)

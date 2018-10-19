@@ -1,6 +1,5 @@
 # coding=utf-8
 
-import os
 from os import devnull
 import functools
 from collections import OrderedDict
@@ -334,28 +333,3 @@ class ResourceGraphQlSqlAlchemy(ResourceGraphQl):
         )
 
         return result
-
-
-class ResourceGraphiQL(object):
-    """Serves GraphiQL dashboard. Meant to be used during development only."""
-
-    def __init__(
-        self,
-        path_graphiql,
-    ):
-
-        self.path_graphiql = path_graphiql
-
-    def on_get(self, req, resp, static_file=None):
-        """Handles GraphiQL GET requests."""
-
-        if static_file is None:
-            static_file = 'graphiql.html'
-            resp.content_type = 'text/html; charset=UTF-8'
-        elif static_file == 'graphiql.css':
-            resp.content_type = 'text/css; charset=UTF-8'
-        else:
-            resp.content_type = 'application/javascript; charset=UTF-8'
-
-        resp.status = falcon.HTTP_200
-        resp.stream = open(os.path.join(self.path_graphiql, static_file), 'rb')
