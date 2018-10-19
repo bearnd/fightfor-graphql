@@ -1,0 +1,196 @@
+---
+
+- name: Update apt cache.
+  apt:
+    update_cache: yes
+    cache_valid_time: 86400
+  ignore_errors: true
+  become: true
+
+- name: Install apt dependencies.
+  apt:
+    name: "{{ item }}"
+    state: latest
+  with_items: "{{ dependencies.apt }}"
+  become: true
+
+- name: Create service group.
+  group:
+    state: present
+    name: "{{ system.group }}"
+  become: true
+
+- name: Create service user.
+  user:
+    state: present
+    name: "{{ system.user }}"
+    createhome: yes
+    group: "{{ system.group }}"
+    shell: "/bin/false"
+  become: true
+
+- name: Create application directories.
+  file:
+    state: directory
+    path: "{{ item }}"
+    owner: "{{ system.user }}"
+    mode: 0755
+  with_items:
+    - "{{ system.directories.config }}"
+    - "{{ system.directories.share }}"
+    - "{{ system.directories.run }}"
+    - "{{ system.directories.log }}"
+    - "{{ system.directories.virtual_env }}"
+  become: true
+
+- name: Install system-level Python dependencies
+  pip:
+    name: "{{ item }}"
+    state: latest
+  with_items: "{{ dependencies.pip.system }}"
+  become: true
+
+- name: Install deployment-level pip dependencies not included in a
+        `requirements.txt` within the virtual environment
+  pip:
+    name: "{{ item }}"
+    state: latest
+    virtualenv: "{{ system.directories.virtual_env }}"
+    virtualenv_python: python3.5
+  with_items: "{{ dependencies.pip.virtualenv }}"
+  become: true
+  become_user: "{{ system.user }}"
+
+- name: Create .ssh directory (Production)
+  file:
+    state: directory
+    path: "/home/{{ system.user }}/.ssh"
+    owner: "{{ system.user }}"
+    mode: 0600
+  become: true
+  when: is_vagrant is not defined or is_vagrant == False
+
+- name: Upload public deployment key (Production)
+  copy:
+    src: "deployment_key.public"
+    dest: "/home/{{ system.user }}/.ssh/deployment_key.public"
+    owner: "{{ system.user }}"
+    mode: 0600
+  when: is_vagrant is not defined or is_vagrant == False
+
+- name: Upload private deployment key (Production)
+  copy:
+    src: "deployment_key.private"
+    dest: "/home/{{ system.user }}/.ssh/deployment_key.private"
+    owner: "{{ system.user }}"
+    mode: 0600
+  when: is_vagrant is not defined or is_vagrant == False
+
+- name: Checkout the project source code from Git (Production)
+  git:
+    repo: "ssh://git@sunny.diskstation.me/bearnd/fightfor-graphql.git"
+    dest: "{{ system.directories.share }}/src"
+    depth: 1
+    force: yes
+    accept_hostkey: true
+    ssh_opts: "-o StrictHostKeyChecking=no  -o Port=30001"
+    key_file: "/home/{{ system.user }}/.ssh/deployment_key.private"
+  when: is_vagrant is not defined or is_vagrant == False
+  become: true
+
+- name: Create `test` configuration file (Vagrant).
+  template:
+    src: "config_test.json.j2"
+    dest: "{{ system.directories.config }}/{{ project.name }}-test.json"
+    owner: "{{ system.user }}"
+    group: "{{ system.group }}"
+    mode: 0600
+  become: true
+  become_user: "{{ system.user }}"
+  when: is_vagrant is defined and is_vagrant == True
+
+- name: Create `dev` configuration file (Vagrant).
+  template:
+    src: "config_dev.json.j2"
+    dest: "{{ system.directories.config }}/{{ project.name }}-dev.json"
+    owner: "{{ system.user }}"
+    group: "{{ system.group }}"
+    mode: 0600
+  become: true
+  become_user: "{{ system.user }}"
+  when: is_vagrant is defined and is_vagrant == True
+
+- name: Create `prod` configuration file (Production).
+  template:
+    src: "config_prod.json.j2"
+    dest: "{{ system.directories.config }}/{{ project.name }}-prod.json"
+    owner: "{{ system.user }}"
+    group: "{{ system.group }}"
+    mode: 0600
+  become: true
+  become_user: "{{ system.user }}"
+  when: is_vagrant is not defined or is_vagrant == False
+
+- name: Create `dev` Gunicorn configuration file (Vagrant).
+  template:
+    src: "gunicorn_config_dev.py.j2"
+    dest: "{{ system.directories.config }}/gunicorn_config.py"
+    owner: "{{ system.user }}"
+    group: "{{ system.group }}"
+    mode: 0600
+  become: true
+  become_user: "{{ system.user }}"
+  when: is_vagrant is defined and is_vagrant == True
+
+- name: Create `prod` Gunicorn configuration file (Production).
+  template:
+    src: "gunicorn_config_prod.py.j2"
+    dest: "{{ system.directories.config }}/gunicorn_config.py"
+    owner: "{{ system.user }}"
+    group: "{{ system.group }}"
+    mode: 0600
+  become: true
+  become_user: "{{ system.user }}"
+  when: is_vagrant is not defined or is_vagrant == False
+
+- name: Install development-only Python package requirements (Vagrant).
+  pip:
+    chdir: "/home/vagrant/{{ project.name }}"
+    requirements: requirements_dev.txt
+    state: latest
+    virtualenv: "{{ system.directories.virtual_env }}"
+    virtualenv_python: python3.5
+  when: is_vagrant is defined and is_vagrant == True
+  become: true
+  become_user: "{{ system.user }}"
+
+- name: Install Python package requirements (Production).
+  pip:
+    chdir: "{{ system.directories.share }}/src"
+    requirements: requirements.txt
+    state: latest
+    virtualenv: "{{ system.directories.virtual_env }}"
+    virtualenv_python: python3.5
+  become: true
+  become_user: "{{ system.user }}"
+  when: is_vagrant is not defined or is_vagrant == False
+
+- name: Create systemd `prod` service file (Production).
+  template:
+    src: "fightfor-graphql.service.j2"
+    dest: "/etc/systemd/system/{{ project.name }}.service"
+    owner: "{{ system.user }}"
+    group: "{{ system.group }}"
+    mode: 0600
+  become: true
+  when: is_vagrant is not defined or is_vagrant == False
+
+- name: Restart `fightfor-graphql`, in all cases, also issue daemon-reload to
+        pick up config changes.
+  systemd:
+    state: restarted
+    daemon_reload: yes
+    name: fightfor-graphql
+    enabled: true
+  become: true
+  when: is_vagrant is not defined or is_vagrant == False

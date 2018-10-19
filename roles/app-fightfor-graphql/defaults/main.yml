@@ -1,0 +1,24 @@
+---
+
+dependencies:
+  apt:
+    - git
+    - htop
+    - build-essential
+    - python3-dev
+    - python-pip
+    - python3-pip
+    - libxslt1-dev
+    - libxml2-dev
+    - libssl-dev
+    - libffi-dev
+    - python-lxml
+    - python3-psycopg2
+  pip:
+    system:
+      - pip==9.0.1
+      - setuptools==36.2.7
+      - virtualenv==15.1.0
+    virtualenv:
+      - ipython==6.1.0
+      - gunicorn==19.9.0

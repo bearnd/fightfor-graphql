@@ -1,0 +1,16 @@
+[Unit]
+Description=fightfor-graphql service
+After=network.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=always
+User={{ system.user }}
+StartLimitBurst=5
+StartLimitIntervalSec=10
+WorkingDirectory={{ system.directories.share }}/src
+ExecStart={{ system.directories.virtual_env }}/bin/gunicorn --config {{ system.directories.config }}/gunicorn_config.py "ffgraphql.ffgraphql:main('{{ system.directories.config }}/{{ project.name }}-prod.json')"
+
+[Install]
+WantedBy=multi-user.target
