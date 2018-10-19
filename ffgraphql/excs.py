@@ -22,3 +22,18 @@ class ConfigFileInvalid(Exception):
     """ Exception raised when a JSON configuration file is invalid."""
     def __init__(self, message, *args):
         super(ConfigFileInvalid, self).__init__(message, *args)
+
+
+class Auth0JwksRetrievalError(Exception):
+    """ Exception raised when the Auth0 JSON Web Key Set could not be
+        retrieved.
+    """
+    def __init__(self, message, *args):
+        super(Auth0JwksRetrievalError, self).__init__(message, *args)
+
+
+class Auth0TokenRetrievalError(Exception):
+    """ Exception raised when the Auth0 JWT token could not be retrieved."""
+
+    def __init__(self, message, *args):
+        super(Auth0TokenRetrievalError, self).__init__(message, *args)
