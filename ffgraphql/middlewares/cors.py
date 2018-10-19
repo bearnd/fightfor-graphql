@@ -65,6 +65,9 @@ class MiddlewareCors(object):
                 framework processed and routed the request; otherwise False.
         """
 
+        # Set the `Access-Control-Allow-Origin` header.
+        resp.set_header('Access-Control-Allow-Origin', '*')
+
         # Skip the request if it doesn't exhibit the characteristics of a CORS
         # OPTIONS preflight request.
         if not self.is_req_cors(req=req):
