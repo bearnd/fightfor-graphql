@@ -183,7 +183,7 @@ class TypeStudiesStats(graphene.ObjectType):
         type=TypeAgeRange,
         study_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.Int),
-            required=True,
+            required=False,
         ),
         description=("Retrieves the patient eligiblity age-range of the "
                      "provided studies in seconds.")
@@ -655,7 +655,7 @@ class TypeStudiesStats(graphene.ObjectType):
     def resolve_get_age_range(
         args: dict,
         info: graphene.ResolveInfo,
-        study_ids: List[int],
+        study_ids: Optional[List[int]] = None,
     ) -> TypeAgeRange:
         """Retrieves the patient eligiblity age-range of the provided studies in
         seconds.
@@ -663,7 +663,7 @@ class TypeStudiesStats(graphene.ObjectType):
         Args:
             args (dict): The resolver arguments.
             info (graphene.ResolveInfo): The resolver info.
-            study_ids (List[int]): A list of Study IDs.
+            study_ids (Optional[List[int]] = None): A list of Study IDs.
 
         Returns:
              TypeAgeRange: The study eligiblity age-range.
@@ -701,7 +701,9 @@ class TypeStudiesStats(graphene.ObjectType):
             func_max_age_sec,
         )  # type: sqlalchemy.orm.Query
         query = query.join(ModelStudy.eligibility)
-        query = query.filter(ModelStudy.study_id.in_(study_ids))
+
+        if study_ids:
+            query = query.filter(ModelStudy.study_id.in_(study_ids))
 
         results = query.all()
 
