@@ -620,7 +620,7 @@ class TypeStudiesStats(graphene.ObjectType):
         Args:
             args (dict): The resolver arguments.
             info (graphene.ResolveInfo): The resolver info.
-            study_ids (List[int]): A list of Study IDs.
+            study_ids (Optional[List[int]] = None): A list of Study IDs.
 
         Returns:
              TypeDateRange: The study start-date range.
