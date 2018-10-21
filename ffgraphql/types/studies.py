@@ -61,6 +61,11 @@ class TypeStudies(graphene.ObjectType):
                          "the `mesh.descriptors` table."),
             required=True
         ),
+        gender=graphene.Argument(
+            type=TypeEnumGender,
+            description="The patient-gender to search by.",
+            required=False,
+        ),
         year_beg=graphene.Argument(
             type=graphene.Int,
             description=("The lower end of the year-range the study may start "
@@ -71,6 +76,18 @@ class TypeStudies(graphene.ObjectType):
             type=graphene.Int,
             description=("The upper end of the year-range the study may start "
                          "in."),
+            required=False,
+        ),
+        age_beg=graphene.Argument(
+            type=graphene.Int,
+            description=("The lower end of the eligibility age-range the study "
+                         "may include."),
+            required=False,
+        ),
+        age_end=graphene.Argument(
+            type=graphene.Int,
+            description=("The upper end of the eligibility age-range the study "
+                         "may include."),
             required=False,
         ),
         do_include_children=graphene.Argument(
@@ -494,8 +511,11 @@ class TypeStudies(graphene.ObjectType):
         args: dict,
         info: graphene.ResolveInfo,
         mesh_descriptor_ids: List[int],
+        gender: Optional[EnumGender] = None,
         year_beg: Optional[int] = None,
         year_end: Optional[int] = None,
+        age_beg: Optional[int] = None,
+        age_end: Optional[int] = None,
         do_include_children: Optional[bool] = True,
     ) -> List[ModelStudy]:
         """Retrieves a list of `ModelStudy` objects matching several optional
@@ -506,12 +526,18 @@ class TypeStudies(graphene.ObjectType):
             info (graphene.ResolveInfo): The resolver info.
             mesh_descriptor_ids (List[int]): A list of MeSH descriptor IDs of
                 the descriptors tagged against the study.
-            year_beg (int, optional): The minimum year the start date of a
+            gender (Optional[EnumGender] = None): The patient gender to search
+                by.
+            year_beg (Optional[int] = None): The minimum year the start date a
                 matched `ModelStudy` may have.
-            year_end (int, optional): The maximum year the start date of a
+            year_end (Optional[int] = None): The maximum year the start date a
                 matched `ModelStudy` may have.
-            do_include_children (bool, optional): Whether to search for and
-                include in the search the children MeSH descriptors of the
+            age_beg (Optional[int] = None): The minimum eligibility age date a
+                matched `ModelStudy` may have.
+            age_end (Optional[int] = None): The maximum eligibility age date a
+                matched `ModelStudy` may have.
+            do_include_children (Optional[bool] = True): Whether to search for
+                and include in the search the children MeSH descriptors of the
                 provided descriptors.
 
         Returns:
@@ -583,6 +609,66 @@ class TypeStudies(graphene.ObjectType):
         if year_end:
             query = query.filter(
                 ModelStudy.start_date <= datetime.date(year_end, 12, 31)
+            )
+
+        # Join on the `eligibility` relationship if any of the fiters that
+        # require it are defined.
+        if gender or age_beg or age_end:
+            query = query.join(ModelStudy.eligibility)
+
+        # Apply a gender filter if defined.
+        if gender:
+            query = query.filter(
+                ModelEligibility.gender ==
+                EnumGender.get_member(value=str(gender)),
+            )
+
+        # Filter studies by the minimum eligibility age.
+        if age_beg:
+            # Convert to seconds.
+            age_beg_sec = age_beg * 31536000
+            # Define the function to convert the minimum eligible age of each
+            # study to seconds.
+            func_age_beg_sec = sqlalchemy_func.extract(
+                "EPOCH",
+                sqlalchemy_func.cast(
+                    ModelEligibility.minimum_age,
+                    postgresql.INTERVAL,
+                ),
+            )
+
+            # If an minimum age is defined then only include studies without a
+            # minimum eligible age or a minimum age greater than or equal to the
+            # defined one.
+            query = query.filter(
+                sqlalchemy.or_(
+                    func_age_beg_sec.is_(None),
+                    func_age_beg_sec >= age_beg_sec,
+                ),
+            )
+
+        # Filter studies by the maximum eligibility age.
+        if age_end:
+            # Convert to seconds.
+            age_end_sec = age_end * 31536000
+            # Define the function to convert the maximum eligible age of each
+            # study to seconds.
+            func_age_end_sec = sqlalchemy_func.extract(
+                "EPOCH",
+                sqlalchemy_func.cast(
+                    ModelEligibility.maximum_age,
+                    postgresql.INTERVAL,
+                ),
+            )
+
+            # If an maximum age is defined then only include studies without a
+            # maximum eligible age or a maximum age less than or equal to the
+            # defined one.
+            query = query.filter(
+                sqlalchemy.or_(
+                    func_age_end_sec.is_(None),
+                    func_age_end_sec <= age_end_sec,
+                ),
             )
 
         # Limit query to fields requested in the GraphQL query.

@@ -1,5 +1,9 @@
 ## Changelog
 
+Issue No. 154: Move the age, gender, and year filters from `StudiesListComponent` to `SearchNewComponent`.
+
+- `studies.py`: Updated the `search` and `resolve_search` and added patient-gender and eligibility age-range arguments.
+
 ### v0.2.0
 
 Issue No. 154: Move the age, gender, and year filters from `StudiesListComponent` to `SearchNewComponent`.
