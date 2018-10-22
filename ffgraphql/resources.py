@@ -1,11 +1,11 @@
 # coding=utf-8
 
-from os import devnull
+import json
 import functools
 from collections import OrderedDict
-from contextlib import redirect_stdout
-import json
+from typing import Dict
 
+import attrdict
 import graphene
 import falcon
 
@@ -20,10 +20,12 @@ class ResourceGraphQl(object):
 
     def __init__(
         self,
+        cfg: attrdict.AttrDict,
         schema: graphene.Schema,
     ):
 
         # Internalize arguments.
+        self.cfg = cfg
         self.schema = schema
 
         # Create logger.
@@ -54,13 +56,19 @@ class ResourceGraphQl(object):
         self,
         query,
         variable_values,
+        token: str,
+        token_payload: Dict,
         operation_name=None,
     ):
-
         result = self.schema.execute(
             query,
             variable_values=variable_values,
-            operation_name=operation_name
+            operation_name=operation_name,
+            context_value={
+                "cfg": self.cfg,
+                "token": token,
+                "token_payload": token_payload,
+            }
         )
 
         return result
@@ -177,14 +185,13 @@ class ResourceGraphQl(object):
             return self._respond_no_query(resp=resp)
 
         # redirect stdout of schema.execute to /dev/null
-        with open(devnull, 'w') as f:
-            with redirect_stdout(f):
-                # run the query
-                result = self._execute_query(
-                    query=query,
-                    variable_values=variables,
-                    operation_name=operation_name
-                )
+        result = self._execute_query(
+            query=query,
+            variable_values=variables,
+            token=req.context["token"],
+            token_payload=req.context["token_payload"],
+            operation_name=operation_name
+        )
 
         # construct the response and return the result
         if result.data:
@@ -206,18 +213,24 @@ class ResourceGraphQlSqlAlchemy(ResourceGraphQl):
 
     def __init__(
         self,
+        cfg,
         schema,
         scoped_session,
     ):
         # Internalize arguments.
         self.scoped_session = scoped_session
 
-        super(ResourceGraphQlSqlAlchemy, self).__init__(schema=schema)
+        super(ResourceGraphQlSqlAlchemy, self).__init__(
+            cfg=cfg,
+            schema=schema
+        )
 
     def _execute_query(
         self,
         query,
         variable_values,
+        token: str,
+        token_payload: Dict,
         operation_name=None,
     ):
         msg = "Executing query: {} with variables {}"
@@ -228,7 +241,12 @@ class ResourceGraphQlSqlAlchemy(ResourceGraphQl):
             query,
             variable_values=variable_values,
             operation_name=operation_name,
-            context_value={"session": self.scoped_session}
+            context_value={
+                "session": self.scoped_session,
+                "cfg": self.cfg,
+                "token": token,
+                "token_payload": token_payload,
+            }
         )
 
         return result
