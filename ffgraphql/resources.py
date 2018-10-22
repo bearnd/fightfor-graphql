@@ -10,9 +10,6 @@ import graphene
 import falcon
 
 from ffgraphql.loggers import create_logger
-from ffgraphql.excs import UnhandledError
-
-
 
 
 class ResourceGraphQl(object):
@@ -193,19 +190,43 @@ class ResourceGraphQl(object):
             operation_name=operation_name
         )
 
-        # construct the response and return the result
-        if result.data:
-            data_ret = {'data': result.data}
+        # If the GraphQL execution resulted in errors then respond with a 200
+        # but include the error messages out of the exceptions.
+        if result.errors:
             resp.status = falcon.HTTP_200
-            resp.body = json.dumps(data_ret, separators=(',', ':'))
-            return
-        elif result.errors:
-            # NOTE: these errors don't include the optional 'locations' key
-            err_msgs = [{'message': str(i)} for i in result.errors]
-            resp.status = falcon.HTTP_400
-            resp.body = json.dumps({'errors': err_msgs}, separators=(',', ':'))
-            return
+            resp.body = json.dumps(
+                {
+                    "errors": [{
+                        "message": str(error)
+                    } for error in result.errors]
+                },
+                separators=(',', ':')
+            )
+            return None
+
+        # If the GraphQL execution yielded results then construct the response
+        # and return. Otherwise respond with a 500 error as the GraphQL
+        # execution yielded neither results nor errors.
+        if result.data:
+            resp.status = falcon.HTTP_200
+            resp.body = json.dumps(
+                {
+                    'data': result.data
+                },
+                separators=(',', ':')
+            )
+            return None
         else:
+            resp.status = falcon.HTTP_500
+            resp.body = json.dumps(
+                {
+                    "errors": [{
+                        "message": str(error)
+                    } for error in result.errors]
+                },
+                separators=(',', ':')
+            )
+            return None
 
 
 class ResourceGraphQlSqlAlchemy(ResourceGraphQl):
