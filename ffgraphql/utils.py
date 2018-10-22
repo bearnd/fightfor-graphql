@@ -4,6 +4,7 @@ import re
 from typing import List, Dict, Union, Type, Optional
 
 import sqlalchemy
+import graphene
 import sqlalchemy.orm
 import graphql
 from graphql.language.ast import FragmentSpread
@@ -291,3 +292,45 @@ def apply_requested_fields(
     query = query.options(*options)
 
     return query
+
+
+def check_auth(
+    info: graphene.ResolveInfo,
+    auth0_user_id: str,
+):
+    """ Checks whether the access-token provided in the request authorizes the
+        caller to access resources pertaining to a specific user.
+
+    Note:
+        As in service-to-service requests there is not user ID in the
+        access-token, any requests where the access-token contains a  `sub`
+        including the API's `auth0_client_id` are considered authorized.
+
+    Args:
+        info (graphene.ResolveInfo): The resolver info.
+        auth0_user_id (str): The Auth0 user ID against which the check is
+            performed.
+
+    Raises:
+        falcon.HTTPError: Raised with a 403 response if the incoming
+            request is unathorized.
+    """
+
+    # Retrieve the application configuration and JWT token payload out of
+    # the context.
+    token_payload = info.context.get("token_payload")
+    cfg = info.context.get("cfg")
+
+    # If the value of the token `sub` field does not contain either the
+    # provided `customer_id` or the configured `client_id` (used in
+    # service-to-service requests) then the response is authorized hence
+    # a 403 exception is raised.
+    if (
+        auth0_user_id not in token_payload["sub"] and
+        cfg.auth0.client_id not in token_payload["sub"]
+    ):
+        msg = ("'Authorization' token does not grant access to user with "
+               "ID '{}'.")
+        msg_fmt = msg.format(auth0_user_id)
+
+        raise graphql.GraphQLError(message=msg_fmt)
