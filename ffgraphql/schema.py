@@ -41,9 +41,17 @@ from ffgraphql.types.pubmed_primitives import (
     TypeArticleAuthorAffiliation,
     TypeEnumJournalIssn,
 )
+from ffgraphql.types.app_primitives import (
+    TypeUser,
+    TypeSearch,
+    TypeUserSearch,
+    TypeSearchDescriptor,
+)
 from ffgraphql.types.studies import TypeStudies
 from ffgraphql.types.descriptors import TypeDescriptors
 from ffgraphql.types.citations import TypeCitations
+from ffgraphql.types.users import TypeUsers
+from ffgraphql.types.searches import TypeSearches
 from ffgraphql.types.studies_stats import (
     TypeCountStudiesCountry,
     TypeCountStudiesOverallStatus,
@@ -57,6 +65,14 @@ from ffgraphql.types.citations_stats import (
     TypeCountCitationsCountry,
     TypeCountCitationsAffiliation,
     TypeCitationsStats,
+)
+from ffgraphql.mutations.users import (
+    MutationUserUpsert,
+    MutationUserDelete,
+)
+from ffgraphql.mutations.searches import (
+    MutationSearchUpsert,
+    MutationSearchDelete,
 )
 
 
@@ -87,6 +103,10 @@ class Query(graphene.ObjectType):
         description="PubMed citation-related statistics.",
     )
 
+    users = graphene.Field(type=TypeUsers, description="Application users.")
+
+    searches = graphene.Field(type=TypeSearches, description="User searches.")
+
     @staticmethod
     def resolve_studies_stats(args, info):
         return TypeStudiesStats
@@ -107,9 +127,28 @@ class Query(graphene.ObjectType):
     def resolve_citations_stats(args, info):
         return TypeCitationsStats
 
+    @staticmethod
+    def resolve_users(args, info):
+        return TypeUsers
+
+    @staticmethod
+    def resolve_searches(args, info):
+        return TypeSearches
+
+
+class Mutation(graphene.ObjectType):
+    """GraphQL mutations."""
+
+    upsert_user = MutationUserUpsert.Field()
+    delete_user = MutationUserDelete.Field()
+
+    upsert_search = MutationSearchUpsert.Field()
+    delete_search = MutationSearchDelete.Field()
+
 
 schema = graphene.Schema(
     query=Query,
+    mutation=Mutation,
     types=[
         # Clinical-trial primitives.
         TypeEnumOverallStatus,
@@ -147,12 +186,21 @@ schema = graphene.Schema(
         TypeAffiliationCanonical,
         TypeArticleAuthorAffiliation,
         TypeEnumJournalIssn,
+        # App primitives.
+        TypeUser,
+        TypeSearch,
+        TypeUserSearch,
+        TypeSearchDescriptor,
         # Clinical trials studies.
         TypeStudies,
         # MeSH descriptors.
         TypeDescriptors,
         # PubMed citations.
         TypeCitations,
+        # Application users.
+        TypeUsers,
+        # Application searches.
+        TypeSearches,
         # Clinical trials study statistics.
         TypeCountStudiesCountry,
         TypeCountStudiesOverallStatus,
@@ -165,5 +213,5 @@ schema = graphene.Schema(
         TypeCountCitationsCountry,
         TypeCountCitationsAffiliation,
         TypeCitationsStats,
-    ]
+    ],
 )
