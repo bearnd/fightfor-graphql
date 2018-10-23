@@ -332,5 +332,4 @@ def check_auth(
         msg = ("'Authorization' token does not grant access to user with "
                "ID '{}'.")
         msg_fmt = msg.format(auth0_user_id)
-
         raise graphql.GraphQLError(message=msg_fmt)
