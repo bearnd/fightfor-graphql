@@ -55,19 +55,20 @@ def create_api(
         ],
     )
 
-    msg_fmt = u"Initializing API resources."
+    msg_fmt = "Initializing API resources."
     logger.info(msg_fmt)
 
     # Add the GraphQL route.
     api.add_route(
         uri_template="/graphql",
         resource=ResourceGraphQlSqlAlchemy(
+            cfg=cfg,
             schema=schema,
             scoped_session=scoped_session,
         )
     )
 
-    msg_fmt = u"API initialization complete."
+    msg_fmt = "API initialization complete."
     logger.info(msg_fmt)
 
     return api

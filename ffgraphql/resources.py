@@ -1,58 +1,34 @@
 # coding=utf-8
 
-from os import devnull
+import json
 import functools
 from collections import OrderedDict
-from contextlib import redirect_stdout
-import json
+from typing import Dict
 
+import attrdict
 import graphene
 import falcon
 
 from ffgraphql.loggers import create_logger
-from ffgraphql.excs import UnhandledError
 
 
-def set_graphql_allow_header(
-    req: falcon.Request,
-    resp: falcon.Response,
-    resource: object,
-):
-    """Sets the 'Allow' header on responses to GraphQL requests.
-
-    Args:
-        req (falcon.Request): The incoming request.
-        resp (falcon.Response): The outgoing response.
-        resource (object): The falcon resource-class associated with the
-            incoming request.
-    """
-
-    # Set the `Allow` header to permit given commands.
-    resp.set_header('Allow', 'GET, POST, OPTIONS')
-
-
-@falcon.after(set_graphql_allow_header)
-class ResourceGraphQl:
+class ResourceGraphQl(object):
     """Main GraphQL server. Integrates with the predefined Graphene schema."""
 
     def __init__(
         self,
+        cfg: attrdict.AttrDict,
         schema: graphene.Schema,
     ):
 
         # Internalize arguments.
+        self.cfg = cfg
         self.schema = schema
 
         # Create logger.
         self.logger = create_logger(
             logger_name=type(self).__name__,
             logger_level="DEBUG"
-        )
-
-        self._respond_invalid_method = functools.partial(
-            self._respond_error,
-            status=falcon.HTTP_405,
-            message="GraphQL only supports GET and POST requests.",
         )
 
         self._respond_no_query = functools.partial(
@@ -77,13 +53,19 @@ class ResourceGraphQl:
         self,
         query,
         variable_values,
+        token: str,
+        token_payload: Dict,
         operation_name=None,
     ):
-
         result = self.schema.execute(
             query,
             variable_values=variable_values,
-            operation_name=operation_name
+            operation_name=operation_name,
+            context_value={
+                "cfg": self.cfg,
+                "token": token,
+                "token_payload": token_payload,
+            }
         )
 
         return result
@@ -100,66 +82,6 @@ class ResourceGraphQl:
             {"errors": [{"message": message}]},
             separators=(',', ':')
         )
-
-    def on_options(self, req, resp):
-        """Handles OPTIONS requests."""
-
-        resp.status = falcon.HTTP_204
-        pass
-
-    def on_head(self, req, resp):
-        """Handles HEAD requests. No content."""
-
-        pass
-
-    def on_get(self, req, resp):
-        """Handles GraphQL GET requests."""
-
-        if req.params and 'query' in req.params and req.params['query']:
-            query = str(req.params['query'])
-        else:
-            # this means that there aren't any query params in the url
-            return self._respond_no_query(resp=resp)
-
-        if 'variables' in req.params and req.params['variables']:
-            try:
-                variables = json.loads(str(req.params['variables']),
-                                       object_pairs_hook=OrderedDict)
-            except json.decoder.JSONDecodeError:
-                return self._respond_invalid_variables(resp=resp)
-        else:
-            variables = ""
-
-        if 'operationName' in req.params and req.params['operationName']:
-            operation_name = str(req.params['operationName'])
-        else:
-            operation_name = None
-
-        # redirect stdout of schema.execute to /dev/null
-        with open(devnull, 'w') as f:
-            with redirect_stdout(f):
-                # run the query
-                result = self._execute_query(
-                    query=query,
-                    variable_values=variables,
-                    operation_name=operation_name
-                )
-
-        # construct the response and return the result
-        if result.data:
-            data_ret = {'data': result.data}
-            resp.status = falcon.HTTP_200
-            resp.body = json.dumps(data_ret, separators=(',', ':'))
-            return
-        elif result.errors:
-            # NOTE: these errors don't include the optional 'locations' key
-            err_msgs = [{'message': str(i)} for i in result.errors]
-            resp.status = falcon.HTTP_400
-            resp.body = json.dumps({'errors': err_msgs}, separators=(',', ':'))
-            return
-        else:
-            # responses should always have either data or errors
-            raise UnhandledError
 
     def on_post(self, req, resp):
         """Handles GraphQL POST requests."""
@@ -260,65 +182,76 @@ class ResourceGraphQl:
             return self._respond_no_query(resp=resp)
 
         # redirect stdout of schema.execute to /dev/null
-        with open(devnull, 'w') as f:
-            with redirect_stdout(f):
-                # run the query
-                result = self._execute_query(
-                    query=query,
-                    variable_values=variables,
-                    operation_name=operation_name
-                )
+        result = self._execute_query(
+            query=query,
+            variable_values=variables,
+            token=req.context["token"],
+            token_payload=req.context["token_payload"],
+            operation_name=operation_name
+        )
 
-        # construct the response and return the result
-        if result.data:
-            data_ret = {'data': result.data}
+        # If the GraphQL execution resulted in errors then respond with a 200
+        # but include the error messages out of the exceptions.
+        if result.errors:
             resp.status = falcon.HTTP_200
-            resp.body = json.dumps(data_ret, separators=(',', ':'))
-            return
-        elif result.errors:
-            # NOTE: these errors don't include the optional 'locations' key
-            err_msgs = [{'message': str(i)} for i in result.errors]
-            resp.status = falcon.HTTP_400
-            resp.body = json.dumps({'errors': err_msgs}, separators=(',', ':'))
-            return
+            resp.body = json.dumps(
+                {
+                    "errors": [{
+                        "message": str(error)
+                    } for error in result.errors]
+                },
+                separators=(',', ':')
+            )
+            return None
+
+        # If the GraphQL execution yielded results then construct the response
+        # and return. Otherwise respond with a 500 error as the GraphQL
+        # execution yielded neither results nor errors.
+        if result.data:
+            resp.status = falcon.HTTP_200
+            resp.body = json.dumps(
+                {
+                    'data': result.data
+                },
+                separators=(',', ':')
+            )
+            return None
         else:
-            # responses should always have either data or errors
-            raise UnhandledError
-
-    def on_put(self, req, resp):
-        """Handles PUT requests."""
-
-        self._respond_invalid_method(resp=resp)
-
-    def on_patch(self, req, resp):
-        """Handles PATCH requests."""
-
-        self._respond_invalid_method(resp=resp)
-
-    def on_delete(self, req, resp):
-        """Handles DELETE requests."""
-
-        self._respond_invalid_method(resp=resp)
+            resp.status = falcon.HTTP_500
+            resp.body = json.dumps(
+                {
+                    "errors": [{
+                        "message": str(error)
+                    } for error in result.errors]
+                },
+                separators=(',', ':')
+            )
+            return None
 
 
-@falcon.after(set_graphql_allow_header)
 class ResourceGraphQlSqlAlchemy(ResourceGraphQl):
     """Main GraphQL server. Integrates with the predefined Graphene schema."""
 
     def __init__(
         self,
+        cfg,
         schema,
         scoped_session,
     ):
         # Internalize arguments.
         self.scoped_session = scoped_session
 
-        super(ResourceGraphQlSqlAlchemy, self).__init__(schema=schema)
+        super(ResourceGraphQlSqlAlchemy, self).__init__(
+            cfg=cfg,
+            schema=schema
+        )
 
     def _execute_query(
         self,
         query,
         variable_values,
+        token: str,
+        token_payload: Dict,
         operation_name=None,
     ):
         msg = "Executing query: {} with variables {}"
@@ -329,7 +262,12 @@ class ResourceGraphQlSqlAlchemy(ResourceGraphQl):
             query,
             variable_values=variable_values,
             operation_name=operation_name,
-            context_value={"session": self.scoped_session}
+            context_value={
+                "session": self.scoped_session,
+                "cfg": self.cfg,
+                "token": token,
+                "token_payload": token_payload,
+            }
         )
 
         return result
