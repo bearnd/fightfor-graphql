@@ -15,6 +15,33 @@ sql_password: !vault |
   38323262323266316232313539663032386530653233306663393165643161643338646439646437
   3737393864313766633133346432346439613363623931316637
 
+# PostgreSQL Server Settings.
+postgresql_python_library: "python-psycopg2"
+
+# PostgreSQL Databases.
+postgresql_databases:
+  - name: "fightfor"
+    port: 5432
+  - name: "test"
+    port: 5432
+
+# PostgreSQL Users.
+postgresql_users:
+  - name: "{{ system.user }}"
+    password: "{{ sql_password }}"
+    port: 5432
+
+# PostgreSQL schemata.
+postgresql_schemata:
+  - clinicaltrials
+  - pubmed
+  - mesh
+  - app
+
+# PostgreSQL extensions.
+postgresql_extensions:
+  - pg_trgm
+  - postgis
 
 # Auth0 variables.
 auth0_dev_domain: !vault |

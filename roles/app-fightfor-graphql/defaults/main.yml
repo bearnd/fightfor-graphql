@@ -14,6 +14,8 @@ dependencies:
     - libffi-dev
     - python-lxml
     - python3-psycopg2
+    - postgis
+    - postgresql-9.5-postgis-scripts
   pip:
     system:
       - pip==9.0.1
