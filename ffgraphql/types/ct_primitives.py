@@ -24,6 +24,9 @@ from fform.orm_ct import StudyOutcome as ModelStudyOutcome
 from fform.orm_ct import ProtocolOutcome as ModelProtocolOutcome
 from fform.orm_ct import StudyReference as ModelStudyReference
 from fform.orm_ct import Reference as ModelReference
+from fform.orm_ct import ArmGroup as ModelArmGroup
+from fform.orm_ct import StudyIntervention as ModelStudyIntervention
+from fform.orm_ct import InterventionArmGroup as ModelInterventionArmGroup
 from fform.orm_ct import ActualType as EnumActualType
 from fform.orm_ct import OverallStatusType as EnumOverallStatus
 from fform.orm_ct import InterventionType as EnumIntervention
@@ -136,8 +139,15 @@ class TypeFacilityCanonical(SQLAlchemyObjectType):
 
 
 class TypeIntervention(SQLAlchemyObjectType):
+
+    intervention_type = TypeEnumIntervention()
+
     class Meta:
         model = ModelIntervention
+        exclude_fields = ["intervention_type"]
+
+    def resolve_intervention_type(self, info, **kwargs):
+        return self.intervention_type
 
 
 class TypeCondition(SQLAlchemyObjectType):
@@ -233,6 +243,24 @@ class TypeReference(SQLAlchemyObjectType):
 
     class Meta:
         model = ModelReference
+
+
+class TypeArmGroup(SQLAlchemyObjectType):
+
+    class Meta:
+        model = ModelArmGroup
+
+
+class TypeStudyIntervention(SQLAlchemyObjectType):
+
+    class Meta:
+        model = ModelStudyIntervention
+
+
+class TypeInterventionArmGroup(SQLAlchemyObjectType):
+
+    class Meta:
+        model = ModelInterventionArmGroup
 
 
 class TypeEnumOrder(graphene.Enum):
