@@ -1,5 +1,13 @@
 ## Changelog
 
+### v0.5.0
+
+Issue No. 164: Implement `StudyComponent` to display the details of a clinical-trials study:
+
+- Updated the Ansible role and added the installation of a local PostgreSQL server in the Vagrant VM.
+- Updated the Vagrant configuraton and exposed the PostgreSQL server port.
+- Refactored the `ct_primitives.py` module and added new types.
+
 ### v0.4.0
 
 Issue No. 159: Add user and search mutations allowing for the creation, update, and deletion of corresponding records:
