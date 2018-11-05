@@ -13,19 +13,46 @@ from fform.orm_ct import Intervention as ModelIntervention
 from fform.orm_ct import Condition as ModelCondition
 from fform.orm_ct import StudyMeshTerm as ModelStudyMeshTerm
 from fform.orm_ct import Eligibility as ModelEligibility
+from fform.orm_ct import Enrollment as ModelEnrollment
+from fform.orm_ct import StudyDesignInfo as ModelStudyDesignInfo
+from fform.orm_ct import Contact as ModelContact
+from fform.orm_ct import Person as ModelPerson
+from fform.orm_ct import Investigator as ModelInvestigator
+from fform.orm_ct import StudyInvestigator as ModelStudyInvestigator
+from fform.orm_ct import LocationInvestigator as ModelLocationInvestigator
+from fform.orm_ct import StudyOutcome as ModelStudyOutcome
+from fform.orm_ct import ProtocolOutcome as ModelProtocolOutcome
+from fform.orm_ct import StudyReference as ModelStudyReference
+from fform.orm_ct import Reference as ModelReference
+from fform.orm_ct import ArmGroup as ModelArmGroup
+from fform.orm_ct import StudyIntervention as ModelStudyIntervention
+from fform.orm_ct import InterventionArmGroup as ModelInterventionArmGroup
+from fform.orm_ct import ActualType as EnumActualType
 from fform.orm_ct import OverallStatusType as EnumOverallStatus
 from fform.orm_ct import InterventionType as EnumIntervention
 from fform.orm_ct import PhaseType as EnumPhase
 from fform.orm_ct import StudyType as EnumStudy
 from fform.orm_ct import GenderType as EnumGender
 from fform.orm_ct import MeshTermType as EnumMeshTerm
+from fform.orm_ct import SamplingMethodType as EnumSamplingMethod
+from fform.orm_ct import RecruitmentStatusType as EnumRecruitmentStatus
+from fform.orm_ct import RoleType as EnumRoleType
+from fform.orm_ct import OutcomeType as EnumOutcomeType
+from fform.orm_ct import ReferenceType as EnumReferenceType
 
 
 TypeEnumOverallStatus = graphene.Enum.from_enum(EnumOverallStatus)
-
 TypeEnumPhase = graphene.Enum.from_enum(EnumPhase)
-
 TypeEnumStudy = graphene.Enum.from_enum(EnumStudy)
+TypeEnumRole = graphene.Enum.from_enum(EnumRoleType)
+TypeEnumRecruitmentStatus = graphene.Enum.from_enum(EnumRecruitmentStatus)
+TypeEnumMeshTerm = graphene.Enum.from_enum(EnumMeshTerm)
+TypeEnumGender = graphene.Enum.from_enum(EnumGender)
+TypeEnumSamplingMethod = graphene.Enum.from_enum(EnumSamplingMethod)
+TypeActualType = graphene.Enum.from_enum(EnumActualType)
+TypeEnumIntervention = graphene.Enum.from_enum(EnumIntervention)
+TypeEnumOutcome = graphene.Enum.from_enum(EnumOutcomeType)
+TypeEnumReference = graphene.Enum.from_enum(EnumReferenceType)
 
 
 class TypeStudy(SQLAlchemyObjectType):
@@ -57,9 +84,48 @@ class TypeMeshTerm(SQLAlchemyObjectType):
         model = ModelMeshTerm
 
 
+class TypeContact(SQLAlchemyObjectType):
+    class Meta:
+        model = ModelContact
+
+
+class TypePerson(SQLAlchemyObjectType):
+    class Meta:
+        model = ModelPerson
+
+
+class TypeInvestigator(SQLAlchemyObjectType):
+
+    role = TypeEnumRole()
+
+    class Meta:
+        model = ModelInvestigator
+        exclude_fields = ["role"]
+
+    def resolve_role(self, info, **kwargs):
+        return self.role
+
+
+class TypeStudyInvestigator(SQLAlchemyObjectType):
+    class Meta:
+        model = ModelStudyInvestigator
+
+
+class TypeLocationInvestigator(SQLAlchemyObjectType):
+    class Meta:
+        model = ModelLocationInvestigator
+
+
 class TypeLocation(SQLAlchemyObjectType):
+
+    status = TypeEnumRecruitmentStatus()
+
     class Meta:
         model = ModelLocation
+        exclude_fields = ['status']
+
+    def resolve_status(self, info, **kwargs):
+        return self.status
 
 
 class TypeFacility(SQLAlchemyObjectType):
@@ -73,16 +139,20 @@ class TypeFacilityCanonical(SQLAlchemyObjectType):
 
 
 class TypeIntervention(SQLAlchemyObjectType):
+
+    intervention_type = TypeEnumIntervention()
+
     class Meta:
         model = ModelIntervention
+        exclude_fields = ["intervention_type"]
+
+    def resolve_intervention_type(self, info, **kwargs):
+        return self.intervention_type
 
 
 class TypeCondition(SQLAlchemyObjectType):
     class Meta:
         model = ModelCondition
-
-
-TypeEnumMeshTerm = graphene.Enum.from_enum(EnumMeshTerm)
 
 
 class TypeStudyMeshTerm(SQLAlchemyObjectType):
@@ -99,19 +169,21 @@ class TypeStudyMeshTerm(SQLAlchemyObjectType):
         return self.mesh_term_type
 
 
-TypeEnumGender = graphene.Enum.from_enum(EnumGender)
-
-
 class TypeEligibility(SQLAlchemyObjectType):
 
     gender = TypeEnumGender()
 
+    sampling_method = TypeEnumSamplingMethod()
+
     class Meta:
         model = ModelEligibility
-        exclude_fields = ["gender"]
+        exclude_fields = ["gender", "sampling_method"]
 
     def resolve_gender(self, info, **kwargs):
         return self.gender
+
+    def resolve_sampling_method(self, info, **kwargs):
+        return self.sampling_method
 
 
 class TypeStudyFacility(SQLAlchemyObjectType):
@@ -119,10 +191,79 @@ class TypeStudyFacility(SQLAlchemyObjectType):
         model = ModelStudyFacility
 
 
+class TypeEnrollment(SQLAlchemyObjectType):
+
+    enrollment_type = TypeActualType()
+
+    class Meta:
+        model = ModelEnrollment
+        exclude_fields = ["enrollment_type"]
+
+    def resolve_enrollment_type(self, info, **kwargs):
+        return self.enrollment_type
+
+
+class TypeStudyDesignInfo(SQLAlchemyObjectType):
+
+    class Meta:
+        model = ModelStudyDesignInfo
+
+
+class TypeStudyOutcome(SQLAlchemyObjectType):
+
+    outcome_type = TypeEnumOutcome()
+
+    class Meta:
+        model = ModelStudyOutcome
+        exclude_fields = ["outcome_type"]
+
+    def resolve_outcome_type(self, info, **kwargs):
+        return self.outcome_type
+
+
+class TypeProtocolOutcome(SQLAlchemyObjectType):
+
+    class Meta:
+        model = ModelProtocolOutcome
+
+
+class TypeStudyReference(SQLAlchemyObjectType):
+
+    reference_type = TypeEnumReference()
+
+    class Meta:
+        model = ModelStudyReference
+        exclude_fields = ["reference_type"]
+
+    def resolve_reference_type(self, info, **kwargs):
+        return self.reference_type
+
+
+class TypeReference(SQLAlchemyObjectType):
+
+    class Meta:
+        model = ModelReference
+
+
+class TypeArmGroup(SQLAlchemyObjectType):
+
+    class Meta:
+        model = ModelArmGroup
+
+
+class TypeStudyIntervention(SQLAlchemyObjectType):
+
+    class Meta:
+        model = ModelStudyIntervention
+
+
+class TypeInterventionArmGroup(SQLAlchemyObjectType):
+
+    class Meta:
+        model = ModelInterventionArmGroup
+
+
 class TypeEnumOrder(graphene.Enum):
 
     ASC = "ASC"
     DESC = "DESC"
-
-
-TypeEnumIntervention = graphene.Enum.from_enum(EnumIntervention)

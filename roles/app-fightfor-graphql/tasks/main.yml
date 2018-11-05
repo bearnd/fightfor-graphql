@@ -14,6 +14,52 @@
   with_items: "{{ dependencies.apt }}"
   become: true
 
+- name: Install PostgreSQL.
+  include_role:
+    name: geerlingguy.postgresql
+  ignore_errors: true
+  when: is_vagrant is defined and is_vagrant == True
+
+- name: Create schemata in the `fightfor` database under PostgreSQL.
+  postgresql_schema:
+    database: "fightfor"
+    name: "{{ item }}"
+    owner: "{{ system.user }}"
+    state: present
+  with_items: "{{ postgresql_schemata }}"
+  become: true
+  become_user: postgres
+  when: is_vagrant is defined and is_vagrant == True
+
+- name: Create schemata in the `test` database under PostgreSQL.
+  postgresql_schema:
+    database: "test"
+    name: "{{ item }}"
+    owner: "{{ system.user }}"
+    state: present
+  with_items: "{{ postgresql_schemata }}"
+  become: true
+  become_user: postgres
+  when: is_vagrant is defined and is_vagrant == True
+
+- name: Install extensions in the `fightfor` database under PostgreSQL.
+  postgresql_ext:
+    db: "fightfor"
+    name: "{{ item }}"
+  with_items: "{{ postgresql_extensions }}"
+  become: true
+  become_user: postgres
+  when: is_vagrant is defined and is_vagrant == True
+
+- name: Install extensions in the `test` database under PostgreSQL.
+  postgresql_ext:
+    db: "test"
+    name: "{{ item }}"
+  with_items: "{{ postgresql_extensions }}"
+  become: true
+  become_user: postgres
+  when: is_vagrant is defined and is_vagrant == True
+
 - name: Create service group.
   group:
     state: present
@@ -42,6 +88,17 @@
     - "{{ system.directories.log }}"
     - "{{ system.directories.virtual_env }}"
   become: true
+
+- name: Copy PostgreSQL configuration files.
+  copy:
+    src: "{{ item }}"
+    dest: "//etc/postgresql/9.5/main/{{ item }}"
+    owner: "postgres"
+    mode: 0600
+  with_items:
+    - "pg_hba.conf"
+    - "postgresql.conf"
+  when: is_vagrant is defined and is_vagrant == True
 
 - name: Install system-level Python dependencies
   pip:
