@@ -152,6 +152,16 @@ class MutationUserDelete(graphene.Mutation):
         # those searches.
         delete_user_searches(session=session, user_id=obj.user_id)
 
+        # Delete all `ModelUserStudy` records related to this user.
+        query = session.query(ModelUserStudy)
+        query = query.filter(ModelUserStudy.user_id == obj.user_id)
+        query.delete()
+
+        # Delete all `ModelUserCitation` records related to this user.
+        query = session.query(ModelUserCitation)
+        query = query.filter(ModelUserCitation.user_id == obj.user_id)
+        query.delete()
+
         # Delete the `ModelUser` record.
         session.delete(obj)
         session.commit()
