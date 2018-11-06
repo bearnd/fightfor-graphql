@@ -64,6 +64,8 @@ from ffgraphql.types.app_primitives import (
     TypeSearch,
     TypeUserSearch,
     TypeSearchDescriptor,
+    TypeUserStudy,
+    TypeUserCitation,
 )
 from ffgraphql.types.studies import TypeStudies
 from ffgraphql.types.descriptors import TypeDescriptors
@@ -227,6 +229,8 @@ schema = graphene.Schema(
         TypeSearch,
         TypeUserSearch,
         TypeSearchDescriptor,
+        TypeUserStudy,
+        TypeUserCitation,
         # Clinical trials studies.
         TypeStudies,
         # MeSH descriptors.
