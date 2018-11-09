@@ -64,6 +64,8 @@ from ffgraphql.types.app_primitives import (
     TypeSearch,
     TypeUserSearch,
     TypeSearchDescriptor,
+    TypeUserStudy,
+    TypeUserCitation,
 )
 from ffgraphql.types.studies import TypeStudies
 from ffgraphql.types.descriptors import TypeDescriptors
@@ -87,6 +89,10 @@ from ffgraphql.types.citations_stats import (
 from ffgraphql.mutations.users import (
     MutationUserUpsert,
     MutationUserDelete,
+    MutationUserStudyUpsert,
+    MutationUserCitationUpsert,
+    MutationUserStudyDelete,
+    MutationUserCitationDelete,
 )
 from ffgraphql.mutations.searches import (
     MutationSearchUpsert,
@@ -163,6 +169,12 @@ class Mutation(graphene.ObjectType):
     upsert_search = MutationSearchUpsert.Field()
     delete_search = MutationSearchDelete.Field()
 
+    upsert_user_study = MutationUserStudyUpsert.Field()
+    upsert_user_citation = MutationUserCitationUpsert.Field()
+
+    delete_user_study = MutationUserStudyDelete.Field()
+    delete_user_citation = MutationUserCitationDelete.Field()
+
 
 schema = graphene.Schema(
     query=Query,
@@ -227,6 +239,8 @@ schema = graphene.Schema(
         TypeSearch,
         TypeUserSearch,
         TypeSearchDescriptor,
+        TypeUserStudy,
+        TypeUserCitation,
         # Clinical trials studies.
         TypeStudies,
         # MeSH descriptors.
