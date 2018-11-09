@@ -1,5 +1,14 @@
 ## Changelog
 
+### v0.6.0
+
+Issue No. 167: Add queries and mutations for saved studies/citations:
+
+- Added new types for the `UserStudy` and `UserCitation` models.
+- Added functions to retrieve a clinical trials study and a PubMed citation via their NCT and PubMed IDs.
+- Added new mutation classes to upsert and delete `UserStudy` and `UserCitation` records.
+- Updated the `resolve` method of the `MutationUserDelete` class to delete the `UserStudy` and `UserCitation` records linked to the user.
+
 ### v0.5.0
 
 Issue No. 164: Implement `StudyComponent` to display the details of a clinical-trials study:
