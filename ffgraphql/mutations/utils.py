@@ -9,6 +9,8 @@ from ffgraphql.types.app_primitives import ModelUser
 from ffgraphql.types.app_primitives import ModelUserSearch
 from ffgraphql.types.app_primitives import ModelSearch
 from ffgraphql.types.app_primitives import ModelSearchDescriptor
+from ffgraphql.types.ct_primitives import ModelStudy
+from ffgraphql.types.pubmed_primitives import ModelCitation
 
 
 def clean_auth0_user_id(auth0_user_id: str) -> str:
@@ -72,6 +74,54 @@ def get_search(
     query = session.query(ModelSearch)
     query = query.filter(ModelSearch.search_uuid == search_uuid)
     obj = query.one_or_none()  # type: ModelSearch
+
+    return obj
+
+
+def get_study(
+    session: sqlalchemy.orm.Session,
+    nct_id: str,
+) -> Optional[ModelStudy]:
+    """ Retrieves a `ModelStudy` record object via its NCT ID.
+
+    Args:
+        session (sqlalchemy.orm.Session): A SQLAlchemy session that will be
+            used to perform the interaction with the SQL database.
+        nct_id (str): The clinical-trials study NCT ID for which retrieval will
+            be performed.
+
+    Returns:
+        ModelStudy: The retrieved `ModelStudy` record object or `None` if no
+            matches were found.
+    """
+
+    query = session.query(ModelStudy)
+    query = query.filter(ModelStudy.nct_id == nct_id)
+    obj = query.one_or_none()  # type: ModelStudy
+
+    return obj
+
+
+def get_citation(
+    session: sqlalchemy.orm.Session,
+    pmid: int,
+) -> Optional[ModelCitation]:
+    """ Retrieves a `ModelCitation` record object via its PubMed ID.
+
+    Args:
+        session (sqlalchemy.orm.Session): A SQLAlchemy session that will be
+            used to perform the interaction with the SQL database.
+        pmid (int): The PubMed citation ID for which retrieval will be
+            performed.
+
+    Returns:
+        ModelCitation: The retrieved `ModelCitation` record object or `None` if
+            no matches were found.
+    """
+
+    query = session.query(ModelCitation)
+    query = query.filter(ModelCitation.pmid == pmid)
+    obj = query.one_or_none()  # type: ModelCitation
 
     return obj
 

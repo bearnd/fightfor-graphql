@@ -6,6 +6,8 @@ from fform.orm_app import User as ModelUser
 from fform.orm_app import Search as ModelSearch
 from fform.orm_app import UserSearch as ModelUserSearch
 from fform.orm_app import SearchDescriptor as ModelSearchDescriptor
+from fform.orm_app import UserStudy as ModelUserStudy
+from fform.orm_app import UserCitation as ModelUserCitation
 
 from ffgraphql.types.ct_primitives import TypeEnumGender
 
@@ -35,3 +37,13 @@ class TypeUserSearch(SQLAlchemyObjectType):
 class TypeSearchDescriptor(SQLAlchemyObjectType):
     class Meta:
         model = ModelSearchDescriptor
+
+
+class TypeUserStudy(SQLAlchemyObjectType):
+    class Meta:
+        model = ModelUserStudy
+
+
+class TypeUserCitation(SQLAlchemyObjectType):
+    class Meta:
+        model = ModelUserCitation
