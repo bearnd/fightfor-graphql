@@ -4,14 +4,13 @@ import graphene
 from graphene_sqlalchemy import SQLAlchemyObjectType
 
 from fform.orm_ct import Study as ModelStudy
-from fform.orm_ct import MeshTerm as ModelMeshTerm
 from fform.orm_ct import Location as ModelLocation
 from fform.orm_ct import Facility as ModelFacility
 from fform.orm_ct import StudyFacility as ModelStudyFacility
 from fform.orm_ct import FacilityCanonical as ModelFacilityCanonical
 from fform.orm_ct import Intervention as ModelIntervention
 from fform.orm_ct import Condition as ModelCondition
-from fform.orm_ct import StudyMeshTerm as ModelStudyMeshTerm
+from fform.orm_ct import StudyDescriptor as ModelStudyDescriptor
 from fform.orm_ct import Eligibility as ModelEligibility
 from fform.orm_ct import Enrollment as ModelEnrollment
 from fform.orm_ct import StudyDesignInfo as ModelStudyDesignInfo
@@ -77,11 +76,6 @@ class TypeStudy(SQLAlchemyObjectType):
 
     def resolve_study_type(self, info, **kwargs):
         return self.study_type
-
-
-class TypeMeshTerm(SQLAlchemyObjectType):
-    class Meta:
-        model = ModelMeshTerm
 
 
 class TypeContact(SQLAlchemyObjectType):
@@ -155,18 +149,18 @@ class TypeCondition(SQLAlchemyObjectType):
         model = ModelCondition
 
 
-class TypeStudyMeshTerm(SQLAlchemyObjectType):
+class TypeStudyDescriptor(SQLAlchemyObjectType):
 
-    mesh_term_type = TypeEnumMeshTerm()
+    study_descriptor_type = TypeEnumMeshTerm()
 
     class Meta:
-        model = ModelStudyMeshTerm
+        model = ModelStudyDescriptor
         exclude_fields = [
-            "mesh_term_type",
+            "study_descriptor_type",
         ]
 
     def resolve_mesh_term_type(self, info, **kwargs):
-        return self.mesh_term_type
+        return self.study_descriptor_type
 
 
 class TypeEligibility(SQLAlchemyObjectType):
