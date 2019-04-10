@@ -9,7 +9,6 @@ from sqlalchemy.dialects import postgresql
 
 from ffgraphql.types.pubmed_primitives import TypeCitation
 from ffgraphql.types.pubmed_primitives import ModelCitation
-from ffgraphql.types.pubmed_primitives import ModelPmDescriptor
 from ffgraphql.types.pubmed_primitives import ModelArticle
 from ffgraphql.types.mt_primitives import ModelTreeNumber
 from ffgraphql.types.mt_primitives import ModelDescriptor
@@ -183,7 +182,7 @@ class TypeCitations(graphene.ObjectType):
         session = info.context.get("session")  # type: sqlalchemy.orm.Session
 
         # If the search is to account for the provided descriptors and their
-        # children the find all the children descriptor UIs. Otherwise only
+        # children the find all the children descriptor IDs. Otherwise only
         # use the provided ones.
         if do_include_children:
             # Retrieve all tree-numbers for the specified MeSH descriptors.
@@ -202,7 +201,7 @@ class TypeCitations(graphene.ObjectType):
 
             # Find all UIs of the descriptors and their children for the found
             # tree-numbers.
-            query_descs = session.query(ModelDescriptor.ui)
+            query_descs = session.query(ModelDescriptor.descriptor_id)
             query_descs = query_descs.join(ModelDescriptor.tree_numbers)
             query_descs = query_descs.filter(
                 ModelTreeNumber.tree_number.like(
@@ -211,19 +210,15 @@ class TypeCitations(graphene.ObjectType):
                     ))
                 )
             )
-        else:
-            # Find the UIs of the descriptors defined under
-            # `mesh_descriptor_ids`.
-            query_descs = session.query(ModelDescriptor.ui)
-            query_descs = query_descs.filter(
-                ModelDescriptor.descriptor_id.in_(mesh_descriptor_ids)
-            )
-        # Retrieve the descriptor UIs, get them out of their encompassing
-        # tuples, and unique them.
-        descriptor_uis = list(set([d[0] for d in query_descs.all()]))
 
-        # If no descriptor UIs have been found return an empty list.
-        if not descriptor_uis:
+            # Retrieve the descriptor IDs, get them out of their encompassing
+            # tuples, and unique them.
+            descriptor_ids = list(set([d[0] for d in query_descs.all()]))
+        else:
+            descriptor_ids = mesh_descriptor_ids
+
+        # If no descriptor IDs have been found return an empty list.
+        if not descriptor_ids:
             return []
 
         # Find all PubMed citations associated with the MeSH descriptors found
@@ -232,7 +227,7 @@ class TypeCitations(graphene.ObjectType):
 
         # Filter citations by associated mesh-descriptors.
         query = query.join(ModelCitation.descriptors)
-        query = query.filter(ModelPmDescriptor.uid.in_(descriptor_uis))
+        query = query.filter(ModelDescriptor.descriptor_id.in_(descriptor_ids))
 
         if year_beg or year_end:
             query = query.join(ModelCitation.article)
