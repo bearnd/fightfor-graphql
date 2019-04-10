@@ -12,7 +12,6 @@ from graphene.utils.str_converters import to_snake_case
 
 from ffgraphql.types.ct_primitives import TypeStudy
 from ffgraphql.types.ct_primitives import ModelStudy
-from ffgraphql.types.ct_primitives import ModelMeshTerm
 from ffgraphql.types.ct_primitives import ModelFacilityCanonical
 from ffgraphql.types.ct_primitives import ModelIntervention
 from ffgraphql.types.ct_primitives import ModelEligibility
@@ -550,7 +549,7 @@ class TypeStudies(graphene.ObjectType):
         session = info.context.get("session")  # type: sqlalchemy.orm.Session
 
         # If the search is to account for the provided descriptors and their
-        # children the find all the children descriptor names. Otherwise only
+        # children the find all the children descriptor IDs. Otherwise only
         # use the provided ones.
         if do_include_children:
             # Retrieve all tree-numbers for the specified MeSH descriptors.
@@ -569,7 +568,7 @@ class TypeStudies(graphene.ObjectType):
 
             # Find all names of the descriptors and their children for the found
             # tree-numbers.
-            query_descs = session.query(ModelDescriptor.name)
+            query_descs = session.query(ModelDescriptor.descriptor_id)
             query_descs = query_descs.join(ModelDescriptor.tree_numbers)
             query_descs = query_descs.filter(
                 ModelTreeNumber.tree_number.like(
@@ -578,28 +577,22 @@ class TypeStudies(graphene.ObjectType):
                     ))
                 )
             )
-        else:
-            # Find the names of the descriptors defined under
-            # `mesh_descriptor_ids`.
-            query_descs = session.query(ModelDescriptor.name)
-            query_descs = query_descs.filter(
-                ModelDescriptor.descriptor_id.in_(mesh_descriptor_ids)
-            )
-        # Retrieve the descriptor names, get them out of their encompassing
-        # tuples, and unique them.
-        descriptor_names = list(set([d[0] for d in query_descs.all()]))
 
-        # If no descriptor-names have been found return an empty list.
-        if not descriptor_names:
+            descriptor_ids = list(set([d[0] for d in query_descs.all()]))
+        else:
+            descriptor_ids = mesh_descriptor_ids
+
+        # If no descriptor IDs have been found return an empty list.
+        if not descriptor_ids:
             return []
 
-        # Find all clinical-trial studies associated with the MeSH descriptor
+        # Find all clinical-trial studies associated with the MeSH descriptors
         # found prior.
         query = session.query(ModelStudy)
 
         # Filter studies by associated mesh-descriptors.
-        query = query.join(ModelStudy.mesh_terms)
-        query = query.filter(ModelMeshTerm.term.in_(descriptor_names))
+        query = query.join(ModelStudy.descriptors)
+        query = query.filter(ModelDescriptor.descriptor_id.in_(descriptor_ids))
 
         # Filter studies the year of their start-date.
         if year_beg:
