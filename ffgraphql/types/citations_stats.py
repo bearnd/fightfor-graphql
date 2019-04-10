@@ -10,9 +10,9 @@ from ffgraphql.types.pubmed_primitives import ModelCitation
 from ffgraphql.types.pubmed_primitives import ModelArticleAuthorAffiliation
 from ffgraphql.types.pubmed_primitives import ModelAffiliationCanonical
 from ffgraphql.types.pubmed_primitives import TypeAffiliationCanonical
-from ffgraphql.types.pubmed_primitives import ModelPmQualifier
 from ffgraphql.types.pubmed_primitives import ModelCitationDescriptorQualifier
-from ffgraphql.types.pubmed_primitives import TypePubMedQualifier
+from ffgraphql.types.mt_primitives import ModelQualifier
+from ffgraphql.types.mt_primitives import TypeQualifier
 from ffgraphql.utils import extract_requested_fields
 from ffgraphql.utils import apply_requested_fields
 
@@ -46,8 +46,8 @@ class TypeCountCitationsQualifier(graphene.ObjectType):
     calculating the number of citations by MeSH qualifier."""
 
     qualifier = graphene.Field(
-        type=TypePubMedQualifier,
-        description="The PubMed qualifier to which the citations refer."
+        type=TypeQualifier,
+        description="The MeSH qualifier to which the citations refer."
     )
 
     count_citations = graphene.Int(description="The number of citations.")
@@ -276,20 +276,20 @@ class TypeCitationsStats(graphene.ObjectType):
 
         # Query out the count of citations by country.
         query = session.query(
-            ModelPmQualifier,
+            ModelQualifier,
             func_count_citations,
         )  # type: sqlalchemy.orm.Query
         query = query.join(
             ModelCitationDescriptorQualifier,
             ModelCitationDescriptorQualifier.qualifier_id ==
-            ModelPmQualifier.qualifier_id,
+            ModelQualifier.qualifier_id,
         )
         query = query.filter(
             ModelCitationDescriptorQualifier.citation_id.in_(citation_ids),
         )
         # Group by qualifier.
         query = query.group_by(
-            ModelPmQualifier.qualifier_id,
+            ModelQualifier.qualifier_id,
         )
         # Order by the number of studies.
         query = query.order_by(func_count_citations.desc())
@@ -301,12 +301,12 @@ class TypeCitationsStats(graphene.ObjectType):
             do_convert_to_snake_case=True,
         )["count_citations_by_qualifier"]["qualifier"]
 
-        # Limit query to `ModelPmQualifier` fields requested in the GraphQL
+        # Limit query to `ModelQualifier` fields requested in the GraphQL
         # query.
         query = apply_requested_fields(
             info=info,
             query=query,
-            orm_class=ModelPmQualifier,
+            orm_class=ModelQualifier,
             fields={"qualifier": fields},
         )
 
