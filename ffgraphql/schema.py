@@ -41,6 +41,7 @@ from ffgraphql.types.ct_primitives import (
 from ffgraphql.types.mt_primitives import (
     TypeDescriptor,
     TypeTreeNumber,
+    TypeDescriptorTreeNumber,
     TypeDescriptorSynonym,
     TypeConcept,
     TypeQualifier,
@@ -214,6 +215,7 @@ schema = graphene.Schema(
         # MeSH term primitives.
         TypeDescriptor,
         TypeTreeNumber,
+        TypeDescriptorTreeNumber,
         TypeDescriptorSynonym,
         TypeConcept,
         TypeQualifier,
