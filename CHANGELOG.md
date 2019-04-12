@@ -1,5 +1,26 @@
 ## Changelog
 
+### v0.7.0
+
+Issue No. 205: Update `fightfor-graphql` to new DB model:
+
+- Increased gunicorn timeouts.
+- Updated configuration variables.
+- Updated the `resolve_search` method of the `TypeStudies` class porting it from using the now defunct `ModelMeshTerm` to using the `ModelDescriptor` class. The search is also based on MeSH descriptor IDs instead of names to increase performance.
+- Updated the `resolve_search` method of the `TypeCitations` class porting it from using the now defunct `ModelPmDescriptor ` to using the `ModelDescriptor` class. The search is also based on MeSH descriptor IDs instead of names to increase performance.
+- Updated the `TypeCitationsStats` class and the corresponding type classes to no longer use the defunct `ModelPmQualifier` and `ModelPmDescriptor` classes and instead use the `ModelQualifier` and `ModelDescriptor` classes.
+- Updated the `TypeStudiesStats` class and the corresponding type classes to no longer use the defunct `ModelMeshTerm` and `ModelStudyMeshTerm` classes and instead use the `ModelDescriptor` and `ModelStudyDescriptor` classes.
+- Removed defunct types.
+- Removed the defunct `TypeMeshTerm` class and renamed/ported the `TypeStudyMeshTerm` as `TypeStudyDescriptor`.
+- Updated schema.
+
+Issue No. 176: Searches by MeSH terms operate in an OR manner instead of AND:
+
+- Updated the `Makefile` to run unit-tests through `unittest`.
+- Added a new `TypeDescriptorTreeNumber` primitive class.
+- Updated the `resolve_search` method of the `TypeStudies` class and updated the study-search to operate on an AND fashion across the MeSH descriptors instead of an OR fashion.
+- Updated the `resolve_search` method of the `TypeCitations` class and updated the citation-search to operate on an AND fashion across the MeSH descriptors instead of an OR fashion.
+
 ### v0.6.0
 
 Issue No. 167: Add queries and mutations for saved studies/citations:
