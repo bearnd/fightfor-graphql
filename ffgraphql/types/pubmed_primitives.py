@@ -10,9 +10,6 @@ from fform.orm_pubmed import (
 )
 from fform.orm_pubmed import JournalInfo as ModelJournalInfo
 from fform.orm_pubmed import Journal as ModelJournal
-from fform.orm_pubmed import Chemical as ModelChemical
-from fform.orm_pubmed import PmDescriptor as ModelPmDescriptor
-from fform.orm_pubmed import PmQualifier as ModelPmQualifier
 from fform.orm_pubmed import (
     CitationDescriptorQualifier as ModelCitationDescriptorQualifier
 )
@@ -38,21 +35,6 @@ class TypeJournalInfo(SQLAlchemyObjectType):
 class TypeJournal(SQLAlchemyObjectType):
     class Meta:
         model = ModelJournal
-
-
-class TypeChemical(SQLAlchemyObjectType):
-    class Meta:
-        model = ModelChemical
-
-
-class TypePubMedDescriptor(SQLAlchemyObjectType):
-    class Meta:
-        model = ModelPmDescriptor
-
-
-class TypePubMedQualifier(SQLAlchemyObjectType):
-    class Meta:
-        model = ModelPmQualifier
 
 
 class TypeCitationDescriptorQualifier(SQLAlchemyObjectType):

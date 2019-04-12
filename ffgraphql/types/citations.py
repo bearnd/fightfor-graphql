@@ -6,13 +6,14 @@ import sqlalchemy
 import sqlalchemy.orm
 import graphene
 from sqlalchemy.dialects import postgresql
+from sqlalchemy import func as sqlalchemy_func
 
 from ffgraphql.types.pubmed_primitives import TypeCitation
 from ffgraphql.types.pubmed_primitives import ModelCitation
-from ffgraphql.types.pubmed_primitives import ModelPmDescriptor
 from ffgraphql.types.pubmed_primitives import ModelArticle
 from ffgraphql.types.mt_primitives import ModelTreeNumber
 from ffgraphql.types.mt_primitives import ModelDescriptor
+from ffgraphql.types.mt_primitives import ModelDescriptorTreeNumber
 from ffgraphql.utils import apply_requested_fields
 
 
@@ -183,48 +184,88 @@ class TypeCitations(graphene.ObjectType):
         session = info.context.get("session")  # type: sqlalchemy.orm.Session
 
         # If the search is to account for the provided descriptors and their
-        # children the find all the children descriptor UIs. Otherwise only
+        # children then find all the children descriptor IDs. Otherwise only
         # use the provided ones.
         if do_include_children:
             # Retrieve all tree-numbers for the specified MeSH descriptors.
-            query_tns = session.query(ModelTreeNumber.tree_number)
-            query_tns = query_tns.join(ModelTreeNumber.descriptors)
-            query_tns = query_tns.filter(
-                ModelDescriptor.descriptor_id.in_(mesh_descriptor_ids),
+            query_tns = session.query(
+                ModelTreeNumber.tree_number,
+                ModelDescriptorTreeNumber.descriptor_id,
             )
-            # Retrieve the tree-numbers and get them out of their encompassing
-            # tuple.
-            tree_numbers = [tn[0] for tn in query_tns.all()]
+            query_tns = query_tns.join(ModelTreeNumber.descriptor_tree_numbers)
+            query_tns = query_tns.filter(
+                ModelDescriptorTreeNumber.descriptor_id.in_(
+                    mesh_descriptor_ids,
+                ),
+            )
+            # Retrieve the tree-numbers and associate them with each provided
+            # descriptor ID in `map_descriptor_tns`.
+            map_descriptor_tns = {}
+            tree_numbers_all = []
+            for tree_number, descriptor_id in query_tns.all():
+                map_descriptor_tns.setdefault(
+                    descriptor_id,
+                    [],
+                ).append(tree_number)
+                tree_numbers_all.append(tree_number)
+
+            # Deduplicate the tree-numbers.
+            tree_numbers_all = list(set(tree_numbers_all))
 
             # If no tree-numbers have been found return an empty list.
-            if not tree_numbers:
+            if not tree_numbers_all:
                 return []
 
-            # Find all UIs of the descriptors and their children for the found
-            # tree-numbers.
-            query_descs = session.query(ModelDescriptor.ui)
+            # Query out the IDs of all children descriptors of all provided
+            # descriptors based on the retrieved tree-numbers.
+            query_descs = session.query(
+                ModelDescriptor.descriptor_id,
+                ModelTreeNumber.tree_number,
+            )
             query_descs = query_descs.join(ModelDescriptor.tree_numbers)
+            # Children descriptors are found by retrieving all descriptors
+            # with any tree number prefixed by one of the previously found
+            # tree-numbers.
             query_descs = query_descs.filter(
                 ModelTreeNumber.tree_number.like(
                     sqlalchemy.any_(postgresql.array(
-                        tuple(["{}%".format(tn) for tn in tree_numbers])
+                        tuple([
+                            "{}%".format(tn)
+                            for tn in tree_numbers_all
+                        ])
                     ))
                 )
             )
-        else:
-            # Find the UIs of the descriptors defined under
-            # `mesh_descriptor_ids`.
-            query_descs = session.query(ModelDescriptor.ui)
-            query_descs = query_descs.filter(
-                ModelDescriptor.descriptor_id.in_(mesh_descriptor_ids)
-            )
-        # Retrieve the descriptor UIs, get them out of their encompassing
-        # tuples, and unique them.
-        descriptor_uis = list(set([d[0] for d in query_descs.all()]))
 
-        # If no descriptor UIs have been found return an empty list.
-        if not descriptor_uis:
+            # Retrieve the children descriptor IDs and associate them with each
+            # provided descriptor ID in `map_descriptor_children`.
+            map_descriptor_children = {}
+            for child_descriptor_id, tree_number in query_descs.all():
+                for descriptor_id, tree_numbers in map_descriptor_tns.items():
+                    for tree_number_prefix in tree_numbers:
+                        if tree_number.startswith(tree_number_prefix):
+                            map_descriptor_children.setdefault(
+                                descriptor_id,
+                                [descriptor_id],
+                            ).append(child_descriptor_id)
+            # Unique the descriptor IDs under each provided descriptor ID.
+            for descriptor_id, tree_numbers in map_descriptor_children.items():
+                map_descriptor_children[descriptor_id] = list(set(tree_numbers))
+        else:
+            map_descriptor_children = {
+                descriptor_id: [descriptor_id]
+                for descriptor_id in mesh_descriptor_ids
+            }
+
+        # If no descriptor IDs have been found return an empty list.
+        if not map_descriptor_children:
             return []
+
+        # Create a function to aggregate the MeSH descriptor IDs of queried
+        # citations into an array.
+        array_descriptors = sqlalchemy_func.array_agg(
+            ModelDescriptor.descriptor_id,
+        )
 
         # Find all PubMed citations associated with the MeSH descriptors found
         # prior.
@@ -232,7 +273,6 @@ class TypeCitations(graphene.ObjectType):
 
         # Filter citations by associated mesh-descriptors.
         query = query.join(ModelCitation.descriptors)
-        query = query.filter(ModelPmDescriptor.uid.in_(descriptor_uis))
 
         if year_beg or year_end:
             query = query.join(ModelCitation.article)
@@ -246,6 +286,27 @@ class TypeCitations(graphene.ObjectType):
             query = query.filter(
                 ModelArticle.publication_year <= year_end
             )
+
+        # Group by citation ID assembling the MeSH descriptor IDs of each study
+        # into arrays. Each citation will pass the filters if it has at least
+        # one of the descriptors under the provided descriptors (which will be
+        # multiple if children descriptors are used). This is achieved through
+        # the overlap `&&` operator which returns `true` if one array shares at
+        # least one element with the other.
+        query = query.group_by(ModelCitation.citation_id)
+        query = query.having(
+            sqlalchemy.and_(
+                *[
+                    array_descriptors.op("&&")(
+                        sqlalchemy_func.cast(
+                            descriptor_ids,
+                            postgresql.ARRAY(postgresql.BIGINT),
+                        )
+                    )
+                    for descriptor_ids in map_descriptor_children.values()
+                ]
+            )
+        )
 
         # Limit query to fields requested in the GraphQL query.
         query = apply_requested_fields(

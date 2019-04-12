@@ -29,10 +29,10 @@ max_requests = 40960
 max_requests_jitter = 7040
 
 # set connection timeout for killing a worker (async jobs still communicate)
-timeout = 60
+timeout = 360
 
 # set time to finish services before restart when signal is received
-graceful_timeout = 60
+graceful_timeout = 360
 
 # set keepalive HTTP connection wait time for next request (in seconds)
 keepalive = 200
