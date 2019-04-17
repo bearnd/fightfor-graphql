@@ -1,5 +1,13 @@
 ## Changelog
 
+### v0.8.0
+
+Issue No. 152: Implement top- and new-therapies card in `SearchResultsSummaryComponent`.
+
+- Updated the `TypeStudiesStats` class and added a new attribute and method to calculate the number of studies by MeSH descriptor.
+- Updated the `TypeStudiesStats` class and added a new attribute and method to find the latest MeSH descriptors for a group of studies.
+- Updated the schema.
+
 ### v0.7.0
 
 Issue No. 205: Update `fightfor-graphql` to new DB model:
