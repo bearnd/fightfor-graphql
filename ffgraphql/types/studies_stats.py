@@ -75,6 +75,19 @@ class TypeCountStudiesFacilityDescriptor(graphene.ObjectType):
     count_studies = graphene.Int(description="The number of studies.")
 
 
+class TypeCountStudiesDescriptor(graphene.ObjectType):
+    """ Graphene type representing a single result of an aggregation operation
+        calculating the number of clinical-trial studies by MeSH descriptor.
+    """
+
+    mesh_term = graphene.Field(
+        type=TypeDescriptor,
+        description="The MeSH descriptor with which the studies are tagged."
+    )
+
+    count_studies = graphene.Int(description="The number of studies.")
+
+
 class TypeDateRange(graphene.ObjectType):
     """Graphene type representing a date-range."""
 
@@ -141,6 +154,16 @@ class TypeStudiesStats(graphene.ObjectType):
         facility_canonical_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.Int),
             required=False,
+        ),
+        mesh_term_type=graphene.Argument(type=TypeEnumMeshTerm, required=False),
+        limit=graphene.Argument(type=graphene.Int, required=False),
+    )
+
+    count_studies_by_descriptor = graphene.List(
+        of_type=TypeCountStudiesDescriptor,
+        study_ids=graphene.Argument(
+            type=graphene.List(of_type=graphene.Int),
+            required=True,
         ),
         mesh_term_type=graphene.Argument(type=TypeEnumMeshTerm, required=False),
         limit=graphene.Argument(type=graphene.Int, required=False),
@@ -407,8 +430,8 @@ class TypeStudiesStats(graphene.ObjectType):
             study_ids (List[int]): A list of Study IDs.
             facility_canonical_ids (Optional[List[int]]): A list of
                 FacilityCanonical IDs.
-            mesh_term_type (Optional[List[int]]): A list of FacilityCanonical
-                IDs.
+            mesh_term_type (Optional[List[int]]): The type of MeSH descriptor
+                to filter on.
             limit (Optional[int]): The number of results to return. Defaults to
                 `None` in which case all results are returned.
 
@@ -487,6 +510,80 @@ class TypeStudiesStats(graphene.ObjectType):
                 facility_canonical=result[0],
                 mesh_term=result[1],
                 count_studies=result[2]
+            ) for result in results
+        ]
+
+        return objs
+
+    @staticmethod
+    def resolve_count_studies_by_descriptor(
+        args: dict,
+        info: graphene.ResolveInfo,
+        study_ids: List[int],
+        mesh_term_type: Optional[EnumMeshTerm] = None,
+        limit: Optional[int] = None,
+    ) -> List[TypeCountStudiesDescriptor]:
+        """Creates a list of `TypeCountStudiesDescriptor` objects with the
+            number of clinical-trial studies per descriptor.
+
+        Args:
+            args (dict): The resolver arguments.
+            info (graphene.ResolveInfo): The resolver info.
+            study_ids (List[int]): A list of Study IDs.
+            mesh_term_type (Optional[List[int]]): The type of MeSH descriptor
+                to filter on.
+            limit (Optional[int]): The number of results to return. Defaults to
+                `None` in which case all results are returned.
+
+        Returns:
+             List[TypeCountStudiesFacilityDescriptor]: The list of
+                `TypeCountStudiesFacilityDescriptor` objects with the results of
+                the aggregation.
+        """
+
+        # Retrieve the session out of the context as the `get_query` method
+        # automatically selects the model.
+        session = info.context.get("session")  # type: sqlalchemy.orm.Session
+
+        # Define the `COUNT(studies.study_id)` function.
+        func_count_studies = sqlalchemy_func.count(
+            sqlalchemy_func.distinct(ModelStudyDescriptor.study_id),
+        )
+
+        # Query out the count of studies by facility.
+        query = session.query(
+            ModelDescriptor,
+            func_count_studies,
+        )  # type: sqlalchemy.orm.Query
+        query = query.join(
+            ModelStudyDescriptor,
+            ModelDescriptor.descriptor_id == ModelStudyDescriptor.descriptor_id,
+        )
+        query = query.filter(ModelStudyDescriptor.study_id.in_(study_ids))
+
+        if mesh_term_type:
+            _member = EnumMeshTerm.get_member(value=str(mesh_term_type))
+            query = query.filter(
+                ModelStudyDescriptor.study_descriptor_type == _member,
+            )
+
+        # Group by study descriptor.
+        query = query.group_by(ModelDescriptor.descriptor_id)
+        # Order by the number of studies.
+        query = query.order_by(func_count_studies.desc())
+
+        # Apply limit (if defined).
+        if limit:
+            query = query.limit(limit=limit)
+
+        results = query.all()
+
+        # Wrap the results of the aggregation in `TypeCountStudiesDescriptor`
+        # objects.
+        objs = [
+            TypeCountStudiesDescriptor(
+                mesh_term=result[0],
+                count_studies=result[1]
             ) for result in results
         ]
 
