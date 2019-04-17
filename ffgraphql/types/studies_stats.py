@@ -116,6 +116,22 @@ class TypeAgeRange(graphene.ObjectType):
     )
 
 
+class TypeLatestDescriptor(graphene.ObjectType):
+    """ Graphene type representing a single result of an aggregation operation
+        calculating the latest MeSH descriptor in a group of clinical-trial
+        studies.
+    """
+
+    mesh_term = graphene.Field(
+        type=TypeDescriptor,
+        description="The MeSH descriptor."
+    )
+
+    date = graphene.Date(
+        description="The earliest date the descriptor appears in a study.",
+    )
+
+
 class TypeStudiesStats(graphene.ObjectType):
 
     count_studies_by_country = graphene.List(
@@ -211,6 +227,16 @@ class TypeStudiesStats(graphene.ObjectType):
         ),
         description=("Retrieves the patient eligiblity age-range of the "
                      "provided studies in seconds.")
+    )
+
+    get_latest_descriptors = graphene.List(
+        of_type=TypeLatestDescriptor,
+        study_ids=graphene.Argument(
+            type=graphene.List(of_type=graphene.Int),
+            required=True,
+        ),
+        mesh_term_type=graphene.Argument(type=TypeEnumMeshTerm, required=False),
+        limit=graphene.Argument(type=graphene.Int, required=False),
     )
 
     @staticmethod
@@ -810,3 +836,78 @@ class TypeStudiesStats(graphene.ObjectType):
         result = TypeAgeRange(results[0][0], results[0][1])
 
         return result
+
+    @staticmethod
+    def resolve_get_latest_descriptors(
+        args: dict,
+        info: graphene.ResolveInfo,
+        study_ids: List[int],
+        mesh_term_type: Optional[EnumMeshTerm] = None,
+        limit: Optional[int] = None,
+    ) -> List[TypeLatestDescriptor]:
+        """ Creates a list of `TypeLatestDescriptor` objects with the latest
+            descriptors.
+
+        Args:
+            args (dict): The resolver arguments.
+            info (graphene.ResolveInfo): The resolver info.
+            study_ids (List[int]): A list of Study IDs.
+            mesh_term_type (Optional[List[int]]): The type of MeSH descriptor
+                to filter on.
+            limit (Optional[int]): The number of results to return. Defaults to
+                `None` in which case all results are returned.
+
+        Returns:
+             List[TypeLatestDescriptor]: The list of `TypeLatestDescriptor`
+                objects with the results of the aggregation.
+        """
+
+        # Retrieve the session out of the context as the `get_query` method
+        # automatically selects the model.
+        session = info.context.get("session")  # type: sqlalchemy.orm.Session
+
+        # Define the `MIN(studies.start_date)` function.
+        func_min_start_date = sqlalchemy_func.min(ModelStudy.start_date)
+
+        # Query out the MeSH descriptors and the minimum date they appear in.
+        query = session.query(
+            ModelDescriptor,
+            func_min_start_date,
+        )  # type: sqlalchemy.orm.Query
+        query = query.join(
+            ModelStudyDescriptor,
+            ModelDescriptor.descriptor_id == ModelStudyDescriptor.descriptor_id,
+        )
+        query = query.join(
+            ModelStudy,
+            ModelStudyDescriptor.study_id == ModelStudy.study_id,
+        )
+        query = query.filter(ModelStudyDescriptor.study_id.in_(study_ids))
+        query = query.filter(ModelStudy.start_date.isnot(None))
+
+        if mesh_term_type:
+            _member = EnumMeshTerm.get_member(value=str(mesh_term_type))
+            query = query.filter(
+                ModelStudyDescriptor.study_descriptor_type == _member,
+            )
+
+        # Group by study descriptor.
+        query = query.group_by(ModelDescriptor.descriptor_id)
+        # Order by the minimum study date.
+        query = query.order_by(func_min_start_date.desc())
+
+        # Apply limit (if defined).
+        if limit:
+            query = query.limit(limit=limit)
+
+        results = query.all()
+
+        # Wrap the results of the aggregation in `TypeLatestDescriptor` objects.
+        objs = [
+            TypeLatestDescriptor(
+                mesh_term=result[0],
+                date=result[1],
+            ) for result in results
+        ]
+
+        return objs
