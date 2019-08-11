@@ -112,7 +112,7 @@ config:
     logger_level: DEBUG
 
     # PostgreSQL Server Configuration Settings.
-    sql_host: "localhost"
+    sql_host: "192.168.0.12"
     sql_port: 5432
     sql_username: "{{ system.user }}"
     sql_password: "{{ sql_password }}"
@@ -140,7 +140,7 @@ config:
     logger_level: DEBUG
 
     # PostgreSQL Server Configuration Settings.
-    sql_host: "192.168.0.168"
+    sql_host: "192.168.0.12"
     sql_port: 5432
     sql_username: "{{ system.user }}"
     sql_password: "{{ sql_password }}"
