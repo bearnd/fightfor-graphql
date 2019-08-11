@@ -53,7 +53,8 @@ class TypeCountStudiesFacility(graphene.ObjectType):
 
     facility_canonical = graphene.Field(
         type=TypeFacilityCanonical,
-        description="The canonical facility in which the studies are performed."
+        description="The canonical facility in which the studies are "
+                    "performed.",
     )
 
     count_studies = graphene.Int(description="The number of studies.")
@@ -67,12 +68,13 @@ class TypeCountStudiesFacilityDescriptor(graphene.ObjectType):
 
     facility_canonical = graphene.Field(
         type=TypeFacilityCanonical,
-        description="The canonical facility in which the studies are performed."
+        description="The canonical facility in which the studies are "
+                    "performed.",
     )
 
     mesh_term = graphene.Field(
         type=TypeDescriptor,
-        description="The MeSH descriptor with which the studies are tagged."
+        description="The MeSH descriptor with which the studies are tagged.",
     )
 
     count_studies = graphene.Int(description="The number of studies.")
@@ -85,7 +87,7 @@ class TypeCountStudiesDescriptor(graphene.ObjectType):
 
     mesh_term = graphene.Field(
         type=TypeDescriptor,
-        description="The MeSH descriptor with which the studies are tagged."
+        description="The MeSH descriptor with which the studies are tagged.",
     )
 
     count_studies = graphene.Int(description="The number of studies.")
@@ -159,6 +161,8 @@ class TypeStudiesStats(graphene.ObjectType):
         of_type=TypeCountStudiesFacility,
         study_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.Int),
+            description="A list of clinical-trial study PK IDs to perform the"
+                        "operation within.",
             required=True,
         ),
         mesh_descriptor_ids=graphene.Argument(
@@ -235,6 +239,8 @@ class TypeStudiesStats(graphene.ObjectType):
         of_type=TypeCountStudiesFacilityDescriptor,
         study_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.Int),
+            description="A list of clinical-trial study PK IDs to perform the"
+                        "operation within.",
             required=True,
         ),
         facility_canonical_ids=graphene.Argument(
@@ -249,6 +255,8 @@ class TypeStudiesStats(graphene.ObjectType):
         of_type=TypeCountStudiesDescriptor,
         study_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.Int),
+            description="A list of clinical-trial study PK IDs to perform the"
+                        "operation within.",
             required=True,
         ),
         mesh_term_type=graphene.Argument(type=TypeEnumMeshTerm, required=False),
@@ -259,6 +267,8 @@ class TypeStudiesStats(graphene.ObjectType):
         of_type=graphene.String,
         study_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.Int),
+            description="A list of clinical-trial study PK IDs to perform the"
+                        "operation within.",
             required=True,
         ),
     )
@@ -267,6 +277,8 @@ class TypeStudiesStats(graphene.ObjectType):
         of_type=graphene.String,
         study_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.Int),
+            description="A list of clinical-trial study PK IDs to perform the"
+                        "operation within.",
             required=True,
         ),
     )
@@ -275,6 +287,8 @@ class TypeStudiesStats(graphene.ObjectType):
         of_type=graphene.String,
         study_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.Int),
+            description="A list of clinical-trial study PK IDs to perform the"
+                        "operation within.",
             required=True,
         ),
     )
@@ -283,6 +297,8 @@ class TypeStudiesStats(graphene.ObjectType):
         type=TypeDateRange,
         study_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.Int),
+            description="A list of clinical-trial study PK IDs to perform the"
+                        "operation within.",
             required=False,
         ),
         description=("Retrieves the start-date date-range of the provided "
@@ -293,20 +309,53 @@ class TypeStudiesStats(graphene.ObjectType):
         type=TypeAgeRange,
         study_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.Int),
+            description="A list of clinical-trial study PK IDs to perform the"
+                        "operation within.",
             required=False,
         ),
-        description=("Retrieves the patient eligiblity age-range of the "
-                     "provided studies in seconds.")
+        description="Retrieves the patient eligiblity age-range of the "
+                    "provided studies in seconds.",
     )
 
     get_latest_descriptors = graphene.List(
         of_type=TypeLatestDescriptor,
         study_ids=graphene.Argument(
             type=graphene.List(of_type=graphene.Int),
+            description="A list of clinical-trial study PK IDs to perform the"
+                        "operation within.",
             required=True,
         ),
-        mesh_term_type=graphene.Argument(type=TypeEnumMeshTerm, required=False),
-        limit=graphene.Argument(type=graphene.Int, required=False),
+        mesh_term_type=graphene.Argument(
+            type=TypeEnumMeshTerm,
+            description="The type of MeSH descriptor the operation will be"
+                        "limited to.",
+            required=False,
+        ),
+        limit=graphene.Argument(
+            type=graphene.Int,
+            description="The number of results to return.",
+            required=False,
+        ),
+        description="Retrieves the latest MeSH descriptors applied to a list of"
+                    "clinical-trial studies.",
+    )
+
+    get_unique_descriptors = graphene.List(
+        of_type=TypeDescriptor,
+        study_ids=graphene.Argument(
+            type=graphene.List(of_type=graphene.Int),
+            description="A list of clinical-trial study PK IDs to perform the"
+                        "operation within.",
+            required=True,
+        ),
+        mesh_term_type=graphene.Argument(
+            type=TypeEnumMeshTerm,
+            description="The type of MeSH descriptor the operation will be"
+                        "limited to.",
+            required=False,
+        ),
+        description="Retrieves the unique MeSH descriptors applied to a list of"
+                    "clinical-trial studies.",
     )
 
     @staticmethod
@@ -1052,11 +1101,12 @@ class TypeStudiesStats(graphene.ObjectType):
         Args:
             args (dict): The resolver arguments.
             info (graphene.ResolveInfo): The resolver info.
-            study_ids (List[int]): A list of Study IDs.
-            mesh_term_type (Optional[List[int]]): The type of MeSH descriptor
-                to filter on.
-            limit (Optional[int]): The number of results to return. Defaults to
-                `None` in which case all results are returned.
+            study_ids (List[int]): A list of clinical-trial study PK IDs to
+                perform the operation within.
+            mesh_term_type (mesh_term_type: Optional[EnumMeshTerm] = None): The
+                type of MeSH descriptor the operation will be limited to.
+            limit (limit: Optional[int] = None): The number of results to
+                return.
 
         Returns:
              List[TypeLatestDescriptor]: The list of `TypeLatestDescriptor`
@@ -1111,5 +1161,55 @@ class TypeStudiesStats(graphene.ObjectType):
                 date=result[1],
             ) for result in results
         ]
+
+        return objs
+
+    @staticmethod
+    def resolve_get_unique_descriptors(
+        args: dict,
+        info: graphene.ResolveInfo,
+        study_ids: List[int],
+        mesh_term_type: Optional[EnumMeshTerm] = None,
+    ) -> List[TypeDescriptor]:
+        """ Creates a list of `TypeLatestDescriptor` objects with the latest
+            descriptors.
+
+        Args:
+            args (dict): The resolver arguments.
+            info (graphene.ResolveInfo): The resolver info.
+            study_ids (List[int]): A list of clinical-trial study PK IDs to
+                perform the operation within.
+            mesh_term_type (mesh_term_type: Optional[EnumMeshTerm] = None): The
+                type of MeSH descriptor the operation will be limited to.
+
+        Returns:
+             List[TypeDescriptor]: The list of `TypeDescriptor` objects that
+                resulted from the operation.
+        """
+
+        # Retrieve the session out of the context as the `get_query` method
+        # automatically selects the model.
+        session = info.context.get("session")  # type: sqlalchemy.orm.Session
+
+        # Query out the MeSH descriptors.
+        query = session.query(ModelDescriptor)  # type: sqlalchemy.orm.Query
+        query = query.join(
+            ModelStudyDescriptor,
+            ModelDescriptor.descriptor_id == ModelStudyDescriptor.descriptor_id,
+        )
+        query = query.join(
+            ModelStudy,
+            ModelStudyDescriptor.study_id == ModelStudy.study_id,
+        )
+        if study_ids:
+            query = query.filter(ModelStudyDescriptor.study_id.in_(study_ids))
+
+        if mesh_term_type:
+            _member = EnumMeshTerm.get_member(value=str(mesh_term_type))
+            query = query.filter(
+                ModelStudyDescriptor.study_descriptor_type == _member,
+            )
+
+        objs = query.all()
 
         return objs
