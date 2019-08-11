@@ -340,6 +340,22 @@ class TypeStudiesStats(graphene.ObjectType):
                     "clinical-trial studies.",
     )
 
+    get_unique_descriptors = graphene.List(
+        of_type=TypeDescriptor,
+        study_ids=graphene.Argument(
+            type=graphene.List(of_type=graphene.Int),
+            description="A list of clinical-trial study PK IDs to perform the"
+                        "operation within.",
+            required=True,
+        ),
+        mesh_term_type=graphene.Argument(
+            type=TypeEnumMeshTerm,
+            description="The type of MeSH descriptor the operation will be"
+                        "limited to.",
+            required=False,
+        ),
+        description="Retrieves the unique MeSH descriptors applied to a list of"
+                    "clinical-trial studies.",
     )
 
     @staticmethod
@@ -1145,5 +1161,55 @@ class TypeStudiesStats(graphene.ObjectType):
                 date=result[1],
             ) for result in results
         ]
+
+        return objs
+
+    @staticmethod
+    def resolve_get_unique_descriptors(
+        args: dict,
+        info: graphene.ResolveInfo,
+        study_ids: List[int],
+        mesh_term_type: Optional[EnumMeshTerm] = None,
+    ) -> List[TypeDescriptor]:
+        """ Creates a list of `TypeLatestDescriptor` objects with the latest
+            descriptors.
+
+        Args:
+            args (dict): The resolver arguments.
+            info (graphene.ResolveInfo): The resolver info.
+            study_ids (List[int]): A list of clinical-trial study PK IDs to
+                perform the operation within.
+            mesh_term_type (mesh_term_type: Optional[EnumMeshTerm] = None): The
+                type of MeSH descriptor the operation will be limited to.
+
+        Returns:
+             List[TypeDescriptor]: The list of `TypeDescriptor` objects that
+                resulted from the operation.
+        """
+
+        # Retrieve the session out of the context as the `get_query` method
+        # automatically selects the model.
+        session = info.context.get("session")  # type: sqlalchemy.orm.Session
+
+        # Query out the MeSH descriptors.
+        query = session.query(ModelDescriptor)  # type: sqlalchemy.orm.Query
+        query = query.join(
+            ModelStudyDescriptor,
+            ModelDescriptor.descriptor_id == ModelStudyDescriptor.descriptor_id,
+        )
+        query = query.join(
+            ModelStudy,
+            ModelStudyDescriptor.study_id == ModelStudy.study_id,
+        )
+        if study_ids:
+            query = query.filter(ModelStudyDescriptor.study_id.in_(study_ids))
+
+        if mesh_term_type:
+            _member = EnumMeshTerm.get_member(value=str(mesh_term_type))
+            query = query.filter(
+                ModelStudyDescriptor.study_descriptor_type == _member,
+            )
+
+        objs = query.all()
 
         return objs
