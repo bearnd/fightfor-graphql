@@ -1,5 +1,19 @@
 ## Changelog
 
+### v0.9.0
+
+Issue No. 232: Add filtering to `count_studies_by_facility` resolver:
+
+- Fixed bug in different resolvers of the `TypeStudies` class where the geo-coordinates were types as integers instead of floats.
+- Fixed bug in the different resolvers of `TypeStudiesStats` where a guard was added before study-filtering in case an empty list of study IDs was passed.
+- Updated the `resolve_count_studies_by_facility` method and the `count_studies_by_facility` resolver to include and apply filtering to the query.
+- Updated configuration variables.
+
+Issue No. 233: Add `get_unique_descriptors` resolver to the `TypeStudiesStats` class:
+
+- Updated descriptions and docstrings.
+- Added a new `get_unique_descriptors` resolver and `resolve_get_unique_descriptors` method to the `TypeStudiesStats` class.
+
 ### v0.8.0
 
 Issue No. 152: Implement top- and new-therapies card in `SearchResultsSummaryComponent`.
