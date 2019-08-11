@@ -6,6 +6,7 @@ import sqlalchemy.orm
 import graphene
 from sqlalchemy import func as sqlalchemy_func
 from sqlalchemy.dialects import postgresql
+from graphene.utils.str_converters import to_snake_case
 
 from ffgraphql.types.ct_primitives import ModelStudy
 from ffgraphql.types.ct_primitives import ModelStudyFacility
@@ -16,6 +17,8 @@ from ffgraphql.types.ct_primitives import EnumOverallStatus
 from ffgraphql.types.ct_primitives import ModelStudyDescriptor
 from ffgraphql.types.ct_primitives import TypeEnumMeshTerm
 from ffgraphql.types.ct_primitives import EnumMeshTerm
+from ffgraphql.types.ct_primitives import TypeEnumOverallStatus
+from ffgraphql.types.ct_primitives import TypeEnumOrder
 from ffgraphql.types.mt_primitives import ModelDescriptor
 from ffgraphql.types.mt_primitives import TypeDescriptor
 from ffgraphql.utils import extract_requested_fields
@@ -158,7 +161,74 @@ class TypeStudiesStats(graphene.ObjectType):
             type=graphene.List(of_type=graphene.Int),
             required=True,
         ),
-        limit=graphene.Argument(type=graphene.Int, required=False),
+        mesh_descriptor_ids=graphene.Argument(
+            type=graphene.List(of_type=graphene.Int),
+            description="A list of MeSH descriptor primary-key IDs as they "
+                        "appear in the `mesh.descriptors` table to filter by.",
+            required=False,
+        ),
+        overall_statuses=graphene.Argument(
+            type=graphene.List(of_type=TypeEnumOverallStatus),
+            description="A list of overall statuses to filter by.",
+            required=False,
+        ),
+        cities=graphene.Argument(
+            type=graphene.List(of_type=graphene.String),
+            description="A list of cities to filter by.",
+            required=False,
+        ),
+        states=graphene.Argument(
+            type=graphene.List(of_type=graphene.String),
+            description="A list of states or regions to filter by.",
+            required=False,
+        ),
+        countries=graphene.Argument(
+            type=graphene.List(of_type=graphene.String),
+            description="A list of countries to filter by.",
+            required=False,
+        ),
+        current_location_longitude=graphene.Argument(
+            type=graphene.Float,
+            description="The longitude of the current position from which "
+                        "only studies on facilities within a "
+                        "`distance_max_km` will be allowed.",
+            required=False,
+        ),
+        current_location_latitude=graphene.Argument(
+            type=graphene.Float,
+            description="The latitude of the current position from which "
+                        "only studies on facilities within a "
+                        "`distance_max_km` will be allowed.",
+            required=False,
+        ),
+        distance_max_km=graphene.Argument(
+            type=graphene.Int,
+            description="The maximum distance in kilometers from the current "
+                        "location coordinates within which study facilities "
+                        "will be allowed.",
+            required=False,
+        ),
+        order_by=graphene.Argument(
+            type=graphene.String,
+            description="The field to order the returned entries by.",
+            required=False,
+        ),
+        order=graphene.Argument(
+            type=TypeEnumOrder,
+            description="The order (ascending or descending) in which the "
+                        "returned entries will be ordered.",
+            required=False,
+        ),
+        offset=graphene.Argument(
+            type=graphene.Int,
+            description="The number of entries to skip when paginating.",
+            required=False,
+        ),
+        limit=graphene.Argument(
+            type=graphene.Int,
+            description="The number of entries to return when paginating.",
+            required=False,
+        ),
     )
 
     count_studies_by_facility_descriptor = graphene.List(
@@ -277,7 +347,10 @@ class TypeStudiesStats(graphene.ObjectType):
             func_count_studies,
         )  # type: sqlalchemy.orm.Query
         query = query.join(ModelStudy.facilities_canonical)
-        query = query.filter(ModelStudy.study_id.in_(study_ids))
+
+        if study_ids:
+            query = query.filter(ModelStudy.study_id.in_(study_ids))
+
         # Group by study country.
         query = query.group_by(ModelFacilityCanonical.country)
         # Order by the number of studies.
@@ -337,7 +410,10 @@ class TypeStudiesStats(graphene.ObjectType):
             ModelStudy.overall_status,
             func_count_studies,
         )  # type: sqlalchemy.orm.Query
-        query = query.filter(ModelStudy.study_id.in_(study_ids))
+
+        if study_ids:
+            query = query.filter(ModelStudy.study_id.in_(study_ids))
+
         # Group by study overall-status.
         query = query.group_by(ModelStudy.overall_status)
         # Order by the number of studies.
@@ -365,17 +441,53 @@ class TypeStudiesStats(graphene.ObjectType):
         args: dict,
         info: graphene.ResolveInfo,
         study_ids: List[int],
+        mesh_descriptor_ids: List[int] = None,
+        overall_statuses: Optional[List[EnumOverallStatus]] = None,
+        cities: Optional[List[str]] = None,
+        states: Optional[List[str]] = None,
+        countries: Optional[List[str]] = None,
+        current_location_longitude: Optional[float] = None,
+        current_location_latitude: Optional[float] = None,
+        distance_max_km: Optional[int] = None,
+        order_by: Optional[str] = None,
+        order: Optional[TypeEnumOrder] = None,
+        offset: Optional[int] = None,
         limit: Optional[int] = None,
     ) -> List[TypeCountStudiesFacility]:
-        """Creates a list of `TypeCountStudiesFacility` objects with the number
-        of clinical-trial studies per canonical facility.
+        """ Creates a list of `TypeCountStudiesFacility` objects with the number
+            of clinical-trial studies per canonical facility.
 
         Args:
             args (dict): The resolver arguments.
             info (graphene.ResolveInfo): The resolver info.
             study_ids (List[int]): A list of Study IDs.
-            limit (Optional[int]): The number of results to return. Defaults to
-                `None` in which case all results are returned.
+            mesh_descriptor_ids (List[int] = None): A list of MeSH descriptor
+                primary-key IDs as they appear in the `mesh.descriptors` table
+                to filter by.
+            overall_statuses (Optional[List[EnumOverallStatus]] = None): A list
+                of overall statuses to filter by.
+            cities (Optional[List[str]] = None): A list of cities to filter by.
+            states (Optional[List[str]] = None): A list of states or regions to
+                filter by.
+            countries (Optional[List[str]] = None): A list of countries to
+                filter by.
+            current_location_longitude (Optional[float] = None): The longitude
+                of the current position from which only studies on facilities
+                within a `distance_max_km` will be allowed.
+            current_location_latitude (Optional[float] = None): The latitude
+                of the current position from which only studies on facilities
+                within a `distance_max_km` will be allowed.
+            distance_max_km (Optional[int] = None): The maximum distance in
+                kilometers from the current location coordinates within which
+                study facilities will be allowed.
+            order_by (Optional[str] = None): The field to order the returned
+                entries by.
+            order (Optional[TypeEnumOrder] = None): The order (ascending or
+                descending) in which the returned entries will be ordered.
+            offset (Optional[int] = None): The number of entries to skip when
+                paginating.
+            limit (Optional[int] = None): The number of entries to return when
+                paginating.
 
         Returns:
              list[TypeCountStudiesFacility]: The list of
@@ -398,7 +510,10 @@ class TypeStudiesStats(graphene.ObjectType):
             func_count_studies,
         )  # type: sqlalchemy.orm.Query
         query = query.join(ModelStudy.facilities_canonical)
-        query = query.filter(ModelStudy.study_id.in_(study_ids))
+
+        if study_ids:
+            query = query.filter(ModelStudy.study_id.in_(study_ids))
+
         # Group by study facility.
         query = query.group_by(ModelFacilityCanonical.facility_canonical_id)
         # Order by the number of studies.
@@ -419,6 +534,84 @@ class TypeStudiesStats(graphene.ObjectType):
             orm_class=ModelFacilityCanonical,
             fields={"facility": fields},
         )
+
+        # Limit studies to those with one of the defined IDs.
+        query = query.filter(ModelStudy.study_id.in_(study_ids))
+
+        # Apply an overall-status filter if any are defined.
+        if overall_statuses:
+            _members = [
+                EnumOverallStatus.get_member(value=str(_status))
+                for _status in overall_statuses
+            ]
+            query = query.filter(ModelStudy.overall_status.in_(_members))
+
+        # Join to the study facility locations and apply filters if any such
+        # filters are defined.
+        if cities or states or countries:
+            query = query.join(ModelStudy.facilities_canonical)
+            if cities:
+                query = query.filter(
+                    ModelFacilityCanonical.locality.in_(cities),
+                )
+            if states:
+                query = query.filter(
+                    ModelFacilityCanonical.administrative_area_level_1.in_(
+                        states,
+                    )
+                )
+            if countries:
+                query = query.filter(
+                    ModelFacilityCanonical.country.in_(countries),
+                )
+
+        if (
+            current_location_longitude and
+            current_location_latitude and
+            distance_max_km
+        ):
+            query = query.join(ModelStudy.facilities_canonical)
+            # Convert distance to meters.
+            distance_max_m = distance_max_km * 1000
+            # Define the function to calculate the distance between the given
+            # coordinates and study facilities.
+            func_distance = sqlalchemy_func.ST_Distance_Sphere(
+                sqlalchemy_func.ST_GeomFromText(
+                    "POINT({} {})".format(
+                        current_location_longitude,
+                        current_location_latitude
+                    ),
+                ),
+                ModelFacilityCanonical.coordinates,
+            )
+
+            # If a maximum age is defined then only include studies without a
+            # facility within the distance from the defined coordinates.
+            query = query.filter(func_distance <= distance_max_m)
+
+        # Join to the study descriptors and apply filters if any such filters
+        # are defined.
+        if mesh_descriptor_ids:
+            query = query.join(ModelStudy.descriptors)
+            query = query.filter(
+                ModelStudyDescriptor.descriptor_id.in_(mesh_descriptor_ids)
+            )
+
+        # Apply order (if defined).
+        if order_by:
+            # Convert the order-by field to snake-case. This allows for fields
+            # to be defined in camel-case but won't error-out if the fields are
+            # already in snake-case.
+            order_by = to_snake_case(order_by)
+
+            if order and order == TypeEnumOrder.DESC.value:
+                query = query.order_by(getattr(ModelStudy, order_by).desc())
+            else:
+                query = query.order_by(getattr(ModelStudy, order_by).asc())
+
+        # Apply offset (if defined).
+        if offset:
+            query = query.offset(offset=offset)
 
         # Apply limit (if defined).
         if limit:
@@ -500,7 +693,8 @@ class TypeStudiesStats(graphene.ObjectType):
             ModelDescriptor.descriptor_id == ModelStudyDescriptor.descriptor_id,
         )
 
-        query = query.filter(ModelStudy.study_id.in_(study_ids))
+        if study_ids:
+            query = query.filter(ModelStudy.study_id.in_(study_ids))
 
         if mesh_term_type:
             _member = EnumMeshTerm.get_member(value=str(mesh_term_type))
@@ -585,7 +779,8 @@ class TypeStudiesStats(graphene.ObjectType):
             ModelStudyDescriptor,
             ModelDescriptor.descriptor_id == ModelStudyDescriptor.descriptor_id,
         )
-        query = query.filter(ModelStudyDescriptor.study_id.in_(study_ids))
+        if study_ids:
+            query = query.filter(ModelStudyDescriptor.study_id.in_(study_ids))
 
         if mesh_term_type:
             _member = EnumMeshTerm.get_member(value=str(mesh_term_type))
@@ -645,7 +840,9 @@ class TypeStudiesStats(graphene.ObjectType):
         # Query out the unique cities of the studies.
         query = session.query(func_unique_cities)  # type: sqlalchemy.orm.Query
         query = query.join(ModelStudy.facilities_canonical)
-        query = query.filter(ModelStudy.study_id.in_(study_ids))
+
+        if study_ids:
+            query = query.filter(ModelStudy.study_id.in_(study_ids))
 
         results = query.all()
 
@@ -685,7 +882,9 @@ class TypeStudiesStats(graphene.ObjectType):
         # Query out the unique states of the studies.
         query = session.query(func_unique_states)  # type: sqlalchemy.orm.Query
         query = query.join(ModelStudy.facilities_canonical)
-        query = query.filter(ModelStudy.study_id.in_(study_ids))
+
+        if study_ids:
+            query = query.filter(ModelStudy.study_id.in_(study_ids))
 
         results = query.all()
 
@@ -726,7 +925,9 @@ class TypeStudiesStats(graphene.ObjectType):
             func_unique_countries,
         )  # type: sqlalchemy.orm.Query
         query = query.join(ModelStudy.facilities_canonical)
-        query = query.filter(ModelStudy.study_id.in_(study_ids))
+
+        if study_ids:
+            query = query.filter(ModelStudy.study_id.in_(study_ids))
 
         results = query.all()
 
@@ -882,7 +1083,8 @@ class TypeStudiesStats(graphene.ObjectType):
             ModelStudy,
             ModelStudyDescriptor.study_id == ModelStudy.study_id,
         )
-        query = query.filter(ModelStudyDescriptor.study_id.in_(study_ids))
+        if study_ids:
+            query = query.filter(ModelStudyDescriptor.study_id.in_(study_ids))
         query = query.filter(ModelStudy.start_date.isnot(None))
 
         if mesh_term_type:
