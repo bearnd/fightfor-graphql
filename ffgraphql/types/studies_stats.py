@@ -277,7 +277,10 @@ class TypeStudiesStats(graphene.ObjectType):
             func_count_studies,
         )  # type: sqlalchemy.orm.Query
         query = query.join(ModelStudy.facilities_canonical)
-        query = query.filter(ModelStudy.study_id.in_(study_ids))
+
+        if study_ids:
+            query = query.filter(ModelStudy.study_id.in_(study_ids))
+
         # Group by study country.
         query = query.group_by(ModelFacilityCanonical.country)
         # Order by the number of studies.
@@ -337,7 +340,10 @@ class TypeStudiesStats(graphene.ObjectType):
             ModelStudy.overall_status,
             func_count_studies,
         )  # type: sqlalchemy.orm.Query
-        query = query.filter(ModelStudy.study_id.in_(study_ids))
+
+        if study_ids:
+            query = query.filter(ModelStudy.study_id.in_(study_ids))
+
         # Group by study overall-status.
         query = query.group_by(ModelStudy.overall_status)
         # Order by the number of studies.
@@ -398,7 +404,10 @@ class TypeStudiesStats(graphene.ObjectType):
             func_count_studies,
         )  # type: sqlalchemy.orm.Query
         query = query.join(ModelStudy.facilities_canonical)
-        query = query.filter(ModelStudy.study_id.in_(study_ids))
+
+        if study_ids:
+            query = query.filter(ModelStudy.study_id.in_(study_ids))
+
         # Group by study facility.
         query = query.group_by(ModelFacilityCanonical.facility_canonical_id)
         # Order by the number of studies.
@@ -500,7 +509,8 @@ class TypeStudiesStats(graphene.ObjectType):
             ModelDescriptor.descriptor_id == ModelStudyDescriptor.descriptor_id,
         )
 
-        query = query.filter(ModelStudy.study_id.in_(study_ids))
+        if study_ids:
+            query = query.filter(ModelStudy.study_id.in_(study_ids))
 
         if mesh_term_type:
             _member = EnumMeshTerm.get_member(value=str(mesh_term_type))
@@ -585,7 +595,8 @@ class TypeStudiesStats(graphene.ObjectType):
             ModelStudyDescriptor,
             ModelDescriptor.descriptor_id == ModelStudyDescriptor.descriptor_id,
         )
-        query = query.filter(ModelStudyDescriptor.study_id.in_(study_ids))
+        if study_ids:
+            query = query.filter(ModelStudyDescriptor.study_id.in_(study_ids))
 
         if mesh_term_type:
             _member = EnumMeshTerm.get_member(value=str(mesh_term_type))
@@ -645,7 +656,9 @@ class TypeStudiesStats(graphene.ObjectType):
         # Query out the unique cities of the studies.
         query = session.query(func_unique_cities)  # type: sqlalchemy.orm.Query
         query = query.join(ModelStudy.facilities_canonical)
-        query = query.filter(ModelStudy.study_id.in_(study_ids))
+
+        if study_ids:
+            query = query.filter(ModelStudy.study_id.in_(study_ids))
 
         results = query.all()
 
@@ -685,7 +698,9 @@ class TypeStudiesStats(graphene.ObjectType):
         # Query out the unique states of the studies.
         query = session.query(func_unique_states)  # type: sqlalchemy.orm.Query
         query = query.join(ModelStudy.facilities_canonical)
-        query = query.filter(ModelStudy.study_id.in_(study_ids))
+
+        if study_ids:
+            query = query.filter(ModelStudy.study_id.in_(study_ids))
 
         results = query.all()
 
@@ -726,7 +741,9 @@ class TypeStudiesStats(graphene.ObjectType):
             func_unique_countries,
         )  # type: sqlalchemy.orm.Query
         query = query.join(ModelStudy.facilities_canonical)
-        query = query.filter(ModelStudy.study_id.in_(study_ids))
+
+        if study_ids:
+            query = query.filter(ModelStudy.study_id.in_(study_ids))
 
         results = query.all()
 
@@ -882,7 +899,8 @@ class TypeStudiesStats(graphene.ObjectType):
             ModelStudy,
             ModelStudyDescriptor.study_id == ModelStudy.study_id,
         )
-        query = query.filter(ModelStudyDescriptor.study_id.in_(study_ids))
+        if study_ids:
+            query = query.filter(ModelStudyDescriptor.study_id.in_(study_ids))
         query = query.filter(ModelStudy.start_date.isnot(None))
 
         if mesh_term_type:
