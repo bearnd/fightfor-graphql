@@ -654,9 +654,13 @@ class TypeStudiesStats(graphene.ObjectType):
             order_by = to_snake_case(order_by)
 
             if order and order == TypeEnumOrder.DESC.value:
-                query = query.order_by(getattr(ModelStudy, order_by).desc())
+                query = query.order_by(
+                    getattr(ModelFacilityCanonical, order_by).desc(),
+                )
             else:
-                query = query.order_by(getattr(ModelStudy, order_by).asc())
+                query = query.order_by(
+                    getattr(ModelFacilityCanonical, order_by).asc(),
+                )
 
         # Apply offset (if defined).
         if offset:
