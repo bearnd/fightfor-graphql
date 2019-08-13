@@ -1,5 +1,9 @@
 ## Changelog
 
+### v0.9.1
+
+- Fixed bug in the `resolve_count_studies_by_facility` of the `TypeStudiesStats` class where the ordering of the results was incorrectly performed against the studies instead of facilities.
+
 ### v0.9.0
 
 Issue No. 232: Add filtering to `count_studies_by_facility` resolver:
