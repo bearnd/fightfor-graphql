@@ -359,6 +359,85 @@ class TypeStudiesStats(graphene.ObjectType):
     )
 
     @staticmethod
+    def _apply_query_filters(
+        query: sqlalchemy.orm.query.Query,
+        study_ids: List[int],
+        mesh_descriptor_ids: List[int] = None,
+        overall_statuses: Optional[List[EnumOverallStatus]] = None,
+        cities: Optional[List[str]] = None,
+        states: Optional[List[str]] = None,
+        countries: Optional[List[str]] = None,
+        current_location_longitude: Optional[float] = None,
+        current_location_latitude: Optional[float] = None,
+        distance_max_km: Optional[int] = None,
+    ) -> sqlalchemy.orm.query.Query:
+
+        # Limit studies to those with one of the defined IDs.
+        if study_ids:
+            query = query.filter(ModelStudy.study_id.in_(study_ids))
+
+        # Apply an overall-status filter if any are defined.
+        if overall_statuses:
+            _members = [
+                EnumOverallStatus.get_member(value=str(_status))
+                for _status in overall_statuses
+            ]
+            query = query.filter(ModelStudy.overall_status.in_(_members))
+
+        # Join to the study facility locations and apply filters if any such
+        # filters are defined.
+        if cities or states or countries:
+            query = query.join(ModelStudy.facilities_canonical)
+            if cities:
+                query = query.filter(
+                    ModelFacilityCanonical.locality.in_(cities),
+                )
+            if states:
+                query = query.filter(
+                    ModelFacilityCanonical.administrative_area_level_1.in_(
+                        states,
+                    )
+                )
+            if countries:
+                query = query.filter(
+                    ModelFacilityCanonical.country.in_(countries),
+                )
+
+        if (
+            current_location_longitude and
+            current_location_latitude and
+            distance_max_km
+        ):
+            query = query.join(ModelStudy.facilities_canonical)
+            # Convert distance to meters.
+            distance_max_m = distance_max_km * 1000
+            # Define the function to calculate the distance between the given
+            # coordinates and study facilities.
+            func_distance = sqlalchemy_func.ST_Distance_Sphere(
+                sqlalchemy_func.ST_GeomFromText(
+                    "POINT({} {})".format(
+                        current_location_longitude,
+                        current_location_latitude
+                    ),
+                ),
+                ModelFacilityCanonical.coordinates,
+            )
+
+            # If a maximum age is defined then only include studies without a
+            # facility within the distance from the defined coordinates.
+            query = query.filter(func_distance <= distance_max_m)
+
+        # Join to the study descriptors and apply filters if any such filters
+        # are defined.
+        if mesh_descriptor_ids:
+            query = query.join(ModelStudy.descriptors)
+            query = query.filter(
+                ModelStudyDescriptor.descriptor_id.in_(mesh_descriptor_ids)
+            )
+
+        return query
+
+    @staticmethod
     def resolve_count_studies_by_country(
         args: dict,
         info: graphene.ResolveInfo,
@@ -560,9 +639,6 @@ class TypeStudiesStats(graphene.ObjectType):
         )  # type: sqlalchemy.orm.Query
         query = query.join(ModelStudy.facilities_canonical)
 
-        if study_ids:
-            query = query.filter(ModelStudy.study_id.in_(study_ids))
-
         # Group by study facility.
         query = query.group_by(ModelFacilityCanonical.facility_canonical_id)
         # Order by the number of studies.
@@ -584,67 +660,19 @@ class TypeStudiesStats(graphene.ObjectType):
             fields={"facility": fields},
         )
 
-        # Limit studies to those with one of the defined IDs.
-        query = query.filter(ModelStudy.study_id.in_(study_ids))
-
-        # Apply an overall-status filter if any are defined.
-        if overall_statuses:
-            _members = [
-                EnumOverallStatus.get_member(value=str(_status))
-                for _status in overall_statuses
-            ]
-            query = query.filter(ModelStudy.overall_status.in_(_members))
-
-        # Join to the study facility locations and apply filters if any such
-        # filters are defined.
-        if cities or states or countries:
-            query = query.join(ModelStudy.facilities_canonical)
-            if cities:
-                query = query.filter(
-                    ModelFacilityCanonical.locality.in_(cities),
-                )
-            if states:
-                query = query.filter(
-                    ModelFacilityCanonical.administrative_area_level_1.in_(
-                        states,
-                    )
-                )
-            if countries:
-                query = query.filter(
-                    ModelFacilityCanonical.country.in_(countries),
-                )
-
-        if (
-            current_location_longitude and
-            current_location_latitude and
-            distance_max_km
-        ):
-            query = query.join(ModelStudy.facilities_canonical)
-            # Convert distance to meters.
-            distance_max_m = distance_max_km * 1000
-            # Define the function to calculate the distance between the given
-            # coordinates and study facilities.
-            func_distance = sqlalchemy_func.ST_Distance_Sphere(
-                sqlalchemy_func.ST_GeomFromText(
-                    "POINT({} {})".format(
-                        current_location_longitude,
-                        current_location_latitude
-                    ),
-                ),
-                ModelFacilityCanonical.coordinates,
-            )
-
-            # If a maximum age is defined then only include studies without a
-            # facility within the distance from the defined coordinates.
-            query = query.filter(func_distance <= distance_max_m)
-
-        # Join to the study descriptors and apply filters if any such filters
-        # are defined.
-        if mesh_descriptor_ids:
-            query = query.join(ModelStudy.descriptors)
-            query = query.filter(
-                ModelStudyDescriptor.descriptor_id.in_(mesh_descriptor_ids)
-            )
+        # Apply the different optional filters to the query.
+        query = TypeStudiesStats._apply_query_filters(
+            query=query,
+            study_ids=study_ids,
+            mesh_descriptor_ids=mesh_descriptor_ids,
+            overall_statuses=overall_statuses,
+            cities=cities,
+            states=states,
+            countries=countries,
+            current_location_longitude=current_location_longitude,
+            current_location_latitude=current_location_latitude,
+            distance_max_km=distance_max_km,
+        )
 
         # Apply order (if defined).
         if order_by:
