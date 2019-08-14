@@ -350,10 +350,11 @@ class TypeStudies(graphene.ObjectType):
         year_end: Optional[int] = None,
         age_beg: Optional[int] = None,
         age_end: Optional[int] = None,
-    ):
+    ) -> sqlalchemy.orm.query.Query:
 
         # Limit studies to those with one of the defined IDs.
-        query = query.filter(ModelStudy.study_id.in_(study_ids))
+        if study_ids:
+            query = query.filter(ModelStudy.study_id.in_(study_ids))
 
         # Apply an overall-status filter if any are defined.
         if overall_statuses:
