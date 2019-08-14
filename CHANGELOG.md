@@ -1,5 +1,12 @@
 ## Changelog
 
+### v0.10.0
+
+Issue No. 238: Add new resolver to count facilities based on a series of filters:
+- Added a new `_apply_query_filters` method to the `TypeStudiesStats` class to apply the SQL query filters that were previously used in the `resolve_count_studies_by_facility` method.
+- Added a new `count_facilities` resolver and `resolve_ count_facilities` method to the `TypeStudiesStats` class to count the facilities that can be returned by the `resolve_count_studies_by_facility` method when the same filters are applied.
+
+
 ### v0.9.1
 
 - Fixed bug in the `resolve_count_studies_by_facility` of the `TypeStudiesStats` class where the ordering of the results was incorrectly performed against the studies instead of facilities.
