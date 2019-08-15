@@ -10,6 +10,7 @@ from graphene.utils.str_converters import to_snake_case
 
 from ffgraphql.types.ct_primitives import ModelStudy
 from ffgraphql.types.ct_primitives import ModelStudyFacility
+from ffgraphql.types.ct_primitives import ModelFacility
 from ffgraphql.types.ct_primitives import ModelFacilityCanonical
 from ffgraphql.types.ct_primitives import ModelEligibility
 from ffgraphql.types.ct_primitives import TypeFacilityCanonical
