@@ -10,6 +10,7 @@ from graphene.utils.str_converters import to_snake_case
 
 from ffgraphql.types.ct_primitives import ModelStudy
 from ffgraphql.types.ct_primitives import ModelStudyFacility
+from ffgraphql.types.ct_primitives import ModelFacility
 from ffgraphql.types.ct_primitives import ModelFacilityCanonical
 from ffgraphql.types.ct_primitives import ModelEligibility
 from ffgraphql.types.ct_primitives import TypeFacilityCanonical
@@ -414,6 +415,18 @@ class TypeStudiesStats(graphene.ObjectType):
                     "clinical-trial studies.",
     )
 
+    get_unique_canonical_facilities = graphene.List(
+        of_type=TypeFacilityCanonical,
+        study_ids=graphene.Argument(
+            type=graphene.List(of_type=graphene.Int),
+            description="A list of clinical-trial study PK IDs to perform the"
+                        "operation within.",
+            required=True,
+        ),
+        description="Retrieves the unique canonical facilities pertaining to "
+                    "a list of clinical-trial studies.",
+    )
+
     @staticmethod
     def _apply_query_filters(
         query: sqlalchemy.orm.query.Query,
@@ -730,6 +743,19 @@ class TypeStudiesStats(graphene.ObjectType):
             distance_max_km=distance_max_km,
         )
 
+        # Exclude canonical facilities where the name of the facility is the
+        # same as the facility's city, state, or country cause that indicates
+        # a facility that couldn't be matched and fell back to the encompassing
+        # area.
+        query = query.filter(
+            sqlalchemy.and_(
+                ModelFacilityCanonical.name != ModelFacilityCanonical.country,
+                ModelFacilityCanonical.name != ModelFacilityCanonical.locality,
+                ModelFacilityCanonical.name !=
+                ModelFacilityCanonical.administrative_area_level_1,
+            )
+        )
+
         # Apply order (if defined).
         if order_by:
             # Convert the order-by field to snake-case. This allows for fields
@@ -843,6 +869,19 @@ class TypeStudiesStats(graphene.ObjectType):
             distance_max_km=distance_max_km,
         )
 
+        # Exclude canonical facilities where the name of the facility is the
+        # same as the facility's city, state, or country cause that indicates
+        # a facility that couldn't be matched and fell back to the encompassing
+        # area.
+        query = query.filter(
+            sqlalchemy.and_(
+                ModelFacilityCanonical.name != ModelFacilityCanonical.country,
+                ModelFacilityCanonical.name != ModelFacilityCanonical.locality,
+                ModelFacilityCanonical.name !=
+                ModelFacilityCanonical.administrative_area_level_1,
+            )
+        )
+
         count = 0
         result = query.one_or_none()
         if result:
@@ -928,6 +967,19 @@ class TypeStudiesStats(graphene.ObjectType):
                     facility_canonical_ids,
                 )
             )
+
+        # Exclude canonical facilities where the name of the facility is the
+        # same as the facility's city, state, or country cause that indicates
+        # a facility that couldn't be matched and fell back to the encompassing
+        # area.
+        query = query.filter(
+            sqlalchemy.and_(
+                ModelFacilityCanonical.name != ModelFacilityCanonical.country,
+                ModelFacilityCanonical.name != ModelFacilityCanonical.locality,
+                ModelFacilityCanonical.name !=
+                ModelFacilityCanonical.administrative_area_level_1,
+            )
+        )
 
         # Group by study facility.
         query = query.group_by(
@@ -1380,6 +1432,65 @@ class TypeStudiesStats(graphene.ObjectType):
             query = query.filter(
                 ModelStudyDescriptor.study_descriptor_type == _member,
             )
+
+        objs = query.all()
+
+        return objs
+
+    @staticmethod
+    def resolve_get_unique_canonical_facilities(
+        args: dict,
+        info: graphene.ResolveInfo,
+        study_ids: List[int],
+    ) -> List[TypeFacilityCanonical]:
+        """ Retrieves the unique canonical facilities pertaining to a list of
+            clinical-trial studies.
+
+        Args:
+            args (dict): The resolver arguments.
+            info (graphene.ResolveInfo): The resolver info.
+            study_ids (List[int]): A list of clinical-trial study PK IDs to
+                perform the operation within.
+
+        Returns:
+             List[TypeFacilityCanonical]: The list of `TypeFacilityCanonical`
+                objects that resulted from the operation.
+        """
+
+        # Retrieve the session out of the context as the `get_query` method
+        # automatically selects the model.
+        session = info.context.get("session")  # type: sqlalchemy.orm.Session
+
+        # Query out the canonical facilities descriptors.
+        query = session.query(
+            ModelFacilityCanonical
+        )  # type: sqlalchemy.orm.Query
+        query = query.distinct(ModelFacilityCanonical.facility_canonical_id)
+        query = query.join(
+            ModelFacility,
+            ModelFacility.facility_canonical_id ==
+            ModelFacilityCanonical.facility_canonical_id,
+        )
+        query = query.join(
+            ModelStudyFacility,
+            ModelStudyFacility.facility_id == ModelFacility.facility_id,
+        )
+
+        if study_ids:
+            query = query.filter(ModelStudyFacility.study_id.in_(study_ids))
+
+        # Exclude canonical facilities where the name of the facility is the
+        # same as the facility's city, state, or country cause that indicates
+        # a facility that couldn't be matched and fell back to the encompassing
+        # area.
+        query = query.filter(
+            sqlalchemy.and_(
+                ModelFacilityCanonical.name != ModelFacilityCanonical.country,
+                ModelFacilityCanonical.name != ModelFacilityCanonical.locality,
+                ModelFacilityCanonical.name !=
+                ModelFacilityCanonical.administrative_area_level_1,
+            )
+        )
 
         objs = query.all()
 

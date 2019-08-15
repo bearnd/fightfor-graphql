@@ -128,6 +128,11 @@ class TypeStudies(graphene.ObjectType):
             description="A list of countries to filter by.",
             required=False,
         ),
+        facility_canonical_ids=graphene.Argument(
+            type=graphene.List(of_type=graphene.Int),
+            description="A list of canonical facility IDs to filter by.",
+            required=False,
+        ),
         current_location_longitude=graphene.Argument(
             type=graphene.Float,
             description=("The longitude of the current position from which "
@@ -204,6 +209,11 @@ class TypeStudies(graphene.ObjectType):
         countries=graphene.Argument(
             type=graphene.List(of_type=graphene.String),
             description="A list of countries to filter by.",
+            required=False,
+        ),
+        facility_canonical_ids=graphene.Argument(
+            type=graphene.List(of_type=graphene.Int),
+            description="A list of canonical facility IDs to filter by.",
             required=False,
         ),
         current_location_longitude=graphene.Argument(
@@ -339,6 +349,7 @@ class TypeStudies(graphene.ObjectType):
         cities: Optional[List[str]] = None,
         states: Optional[List[str]] = None,
         countries: Optional[List[str]] = None,
+        facility_canonical_ids: Optional[List[int]] = None,
         current_location_longitude: Optional[float] = None,
         current_location_latitude: Optional[float] = None,
         distance_max_km: Optional[int] = None,
@@ -366,7 +377,7 @@ class TypeStudies(graphene.ObjectType):
 
         # Join to the study facility locations and apply filters if any such
         # filters are defined.
-        if cities or states or countries:
+        if cities or states or countries or facility_canonical_ids:
             query = query.join(ModelStudy.facilities_canonical)
             if cities:
                 query = query.filter(
@@ -381,6 +392,12 @@ class TypeStudies(graphene.ObjectType):
             if countries:
                 query = query.filter(
                     ModelFacilityCanonical.country.in_(countries),
+                )
+            if facility_canonical_ids:
+                query = query.filter(
+                    ModelFacilityCanonical.facility_canonical_id.in_(
+                        facility_canonical_ids,
+                    ),
                 )
 
         if (
@@ -406,6 +423,30 @@ class TypeStudies(graphene.ObjectType):
             # If a maximum age is defined then only include studies without a
             # facility within the distance from the defined coordinates.
             query = query.filter(func_distance <= distance_max_m)
+
+        if (
+            (cities or states or countries or facility_canonical_ids) or
+            (
+                current_location_longitude and
+                current_location_latitude and
+                distance_max_km
+            )
+        ):
+
+            # Exclude canonical facilities where the name of the facility is the
+            # same as the facility's city, state, or country cause that
+            # indicates a facility that couldn't be matched and fell back to the
+            # encompassing area.
+            query = query.filter(
+                sqlalchemy.and_(
+                    ModelFacilityCanonical.name !=
+                    ModelFacilityCanonical.country,
+                    ModelFacilityCanonical.name !=
+                    ModelFacilityCanonical.locality,
+                    ModelFacilityCanonical.name !=
+                    ModelFacilityCanonical.administrative_area_level_1,
+                )
+            )
 
         # Join to the study interventions and apply filters if any such filters
         # are defined.
@@ -752,6 +793,7 @@ class TypeStudies(graphene.ObjectType):
         cities: Optional[List[str]] = None,
         states: Optional[List[str]] = None,
         countries: Optional[List[str]] = None,
+        facility_canonical_ids: Optional[List[int]] = None,
         current_location_longitude: Optional[float] = None,
         current_location_latitude: Optional[float] = None,
         distance_max_km: Optional[int] = None,
@@ -791,6 +833,7 @@ class TypeStudies(graphene.ObjectType):
             cities=cities,
             states=states,
             countries=countries,
+            facility_canonical_ids=facility_canonical_ids,
             current_location_longitude=current_location_longitude,
             current_location_latitude=current_location_latitude,
             distance_max_km=distance_max_km,
@@ -837,6 +880,7 @@ class TypeStudies(graphene.ObjectType):
         cities: Optional[List[str]] = None,
         states: Optional[List[str]] = None,
         countries: Optional[List[str]] = None,
+        facility_canonical_ids: Optional[List[int]] = None,
         current_location_longitude: Optional[float] = None,
         current_location_latitude: Optional[float] = None,
         distance_max_km: Optional[int] = None,
@@ -869,6 +913,7 @@ class TypeStudies(graphene.ObjectType):
             cities=cities,
             states=states,
             countries=countries,
+            facility_canonical_ids=facility_canonical_ids,
             current_location_longitude=current_location_longitude,
             current_location_latitude=current_location_latitude,
             distance_max_km=distance_max_km,

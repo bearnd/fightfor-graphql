@@ -1,5 +1,19 @@
 ## Changelog
 
+### v0.11.0
+
+Issue No. 242: Add a canonical facility ID filter on the `filter` and `count` resolvers of the `TypeStudies` class:
+- Updated the `_apply_query_filters` method of the `TypeStudies` class to include a `facility_canonical_ids` argument and filter on those IDs.
+- Added the `filter` resolver and `resolve_filter` method of the `TypeStudies` class to permit filtering by canonical facility IDs.
+- Added the `count` resolver and `resolve_count` method of the `TypeStudies` class to permit filtering by canonical facility IDs.
+
+Issue No. 244: Add a new resolver to retrieve all unique canonical facilities out of a list of studies:
+- Added a new `get_unique_canonical_facilities` resolver and `resolve_get_unique_canonical_facilities ` method to the `TypeStudiesStats` class to get the unique canonical facilities from a list of clinical-trials.
+
+Issue No. 150:
+- Updated the `TypeStudiesStats` class and its various resolver methods to filter out canonical facilities where the name of the facility matches the name of that facilitiy’s city, state, or country cause that’d indicate a fallback match.
+- Updated the `TypeStudies` class and its various resolver methods to filter out canonical facilities where the name of the facility matches the name of that facilitiy’s city, state, or country cause that’d indicate a fallback match.
+
 ### v0.10.0
 
 Issue No. 238: Add new resolver to count facilities based on a series of filters:
