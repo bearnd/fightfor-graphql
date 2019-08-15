@@ -128,6 +128,11 @@ class TypeStudies(graphene.ObjectType):
             description="A list of countries to filter by.",
             required=False,
         ),
+        facility_canonical_ids=graphene.Argument(
+            type=graphene.List(of_type=graphene.Int),
+            description="A list of canonical facility IDs to filter by.",
+            required=False,
+        ),
         current_location_longitude=graphene.Argument(
             type=graphene.Float,
             description=("The longitude of the current position from which "
@@ -759,6 +764,7 @@ class TypeStudies(graphene.ObjectType):
         cities: Optional[List[str]] = None,
         states: Optional[List[str]] = None,
         countries: Optional[List[str]] = None,
+        facility_canonical_ids: Optional[List[int]] = None,
         current_location_longitude: Optional[float] = None,
         current_location_latitude: Optional[float] = None,
         distance_max_km: Optional[int] = None,
@@ -798,6 +804,7 @@ class TypeStudies(graphene.ObjectType):
             cities=cities,
             states=states,
             countries=countries,
+            facility_canonical_ids=facility_canonical_ids,
             current_location_longitude=current_location_longitude,
             current_location_latitude=current_location_latitude,
             distance_max_km=distance_max_km,
