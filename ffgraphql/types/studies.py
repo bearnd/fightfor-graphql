@@ -424,6 +424,30 @@ class TypeStudies(graphene.ObjectType):
             # facility within the distance from the defined coordinates.
             query = query.filter(func_distance <= distance_max_m)
 
+        if (
+            (cities or states or countries or facility_canonical_ids) or
+            (
+                current_location_longitude and
+                current_location_latitude and
+                distance_max_km
+            )
+        ):
+
+            # Exclude canonical facilities where the name of the facility is the
+            # same as the facility's city, state, or country cause that
+            # indicates a facility that couldn't be matched and fell back to the
+            # encompassing area.
+            query = query.filter(
+                sqlalchemy.and_(
+                    ModelFacilityCanonical.name !=
+                    ModelFacilityCanonical.country,
+                    ModelFacilityCanonical.name !=
+                    ModelFacilityCanonical.locality,
+                    ModelFacilityCanonical.name !=
+                    ModelFacilityCanonical.administrative_area_level_1,
+                )
+            )
+
         # Join to the study interventions and apply filters if any such filters
         # are defined.
         if intervention_types:

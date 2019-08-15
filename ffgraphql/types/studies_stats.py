@@ -743,6 +743,19 @@ class TypeStudiesStats(graphene.ObjectType):
             distance_max_km=distance_max_km,
         )
 
+        # Exclude canonical facilities where the name of the facility is the
+        # same as the facility's city, state, or country cause that indicates
+        # a facility that couldn't be matched and fell back to the encompassing
+        # area.
+        query = query.filter(
+            sqlalchemy.and_(
+                ModelFacilityCanonical.name != ModelFacilityCanonical.country,
+                ModelFacilityCanonical.name != ModelFacilityCanonical.locality,
+                ModelFacilityCanonical.name !=
+                ModelFacilityCanonical.administrative_area_level_1,
+            )
+        )
+
         # Apply order (if defined).
         if order_by:
             # Convert the order-by field to snake-case. This allows for fields
@@ -856,6 +869,19 @@ class TypeStudiesStats(graphene.ObjectType):
             distance_max_km=distance_max_km,
         )
 
+        # Exclude canonical facilities where the name of the facility is the
+        # same as the facility's city, state, or country cause that indicates
+        # a facility that couldn't be matched and fell back to the encompassing
+        # area.
+        query = query.filter(
+            sqlalchemy.and_(
+                ModelFacilityCanonical.name != ModelFacilityCanonical.country,
+                ModelFacilityCanonical.name != ModelFacilityCanonical.locality,
+                ModelFacilityCanonical.name !=
+                ModelFacilityCanonical.administrative_area_level_1,
+            )
+        )
+
         count = 0
         result = query.one_or_none()
         if result:
@@ -941,6 +967,19 @@ class TypeStudiesStats(graphene.ObjectType):
                     facility_canonical_ids,
                 )
             )
+
+        # Exclude canonical facilities where the name of the facility is the
+        # same as the facility's city, state, or country cause that indicates
+        # a facility that couldn't be matched and fell back to the encompassing
+        # area.
+        query = query.filter(
+            sqlalchemy.and_(
+                ModelFacilityCanonical.name != ModelFacilityCanonical.country,
+                ModelFacilityCanonical.name != ModelFacilityCanonical.locality,
+                ModelFacilityCanonical.name !=
+                ModelFacilityCanonical.administrative_area_level_1,
+            )
+        )
 
         # Group by study facility.
         query = query.group_by(
