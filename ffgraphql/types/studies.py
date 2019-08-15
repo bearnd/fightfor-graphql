@@ -339,6 +339,7 @@ class TypeStudies(graphene.ObjectType):
         cities: Optional[List[str]] = None,
         states: Optional[List[str]] = None,
         countries: Optional[List[str]] = None,
+        facility_canonical_ids: Optional[List[int]] = None,
         current_location_longitude: Optional[float] = None,
         current_location_latitude: Optional[float] = None,
         distance_max_km: Optional[int] = None,
@@ -366,7 +367,7 @@ class TypeStudies(graphene.ObjectType):
 
         # Join to the study facility locations and apply filters if any such
         # filters are defined.
-        if cities or states or countries:
+        if cities or states or countries or facility_canonical_ids:
             query = query.join(ModelStudy.facilities_canonical)
             if cities:
                 query = query.filter(
@@ -381,6 +382,12 @@ class TypeStudies(graphene.ObjectType):
             if countries:
                 query = query.filter(
                     ModelFacilityCanonical.country.in_(countries),
+                )
+            if facility_canonical_ids:
+                query = query.filter(
+                    ModelFacilityCanonical.facility_canonical_id.in_(
+                        facility_canonical_ids,
+                    ),
                 )
 
         if (
