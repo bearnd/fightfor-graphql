@@ -2,13 +2,15 @@
 
 from graphene_sqlalchemy import SQLAlchemyObjectType
 
-from fform.orm_mt import Descriptor as ModelDescriptor
-from fform.orm_mt import TreeNumber as ModelTreeNumber
-from fform.orm_mt import DescriptorTreeNumber as ModelDescriptorTreeNumber
-from fform.orm_mt import DescriptorSynonym as ModelDescriptorSynonym
-from fform.orm_mt import Concept as ModelConcept
-from fform.orm_mt import Qualifier as ModelQualifier
-from fform.orm_mt import DescriptorDefinition as ModelDescriptorDefinition
+from fform.orm_mt import (
+    Descriptor as ModelDescriptor,
+    TreeNumber as ModelTreeNumber,
+    DescriptorTreeNumber as ModelDescriptorTreeNumber,
+    DescriptorSynonym as ModelDescriptorSynonym,
+    Concept as ModelConcept,
+    Qualifier as ModelQualifier,
+    DescriptorDefinition as ModelDescriptorDefinition,
+)
 
 
 class TypeDescriptor(SQLAlchemyObjectType):
