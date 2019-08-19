@@ -12,7 +12,13 @@ from fform.orm_mt import (
     Qualifier as ModelQualifier,
     DescriptorDefinition as ModelDescriptorDefinition,
     DescriptorClassType as EnumDescriptorClass,
+    DescriptorDefinitionSourceType as EnumDescriptorDefinitionSource,
+)
+
+
 TypeEnumDescriptorClass = graphene.Enum.from_enum(EnumDescriptorClass)
+TypeEnumDescriptorDefinitionSource = graphene.Enum.from_enum(
+    EnumDescriptorDefinitionSource,
 )
 
 
@@ -54,5 +60,12 @@ class TypeQualifier(SQLAlchemyObjectType):
 
 
 class TypeDescriptorDefinition(SQLAlchemyObjectType):
+
+    source = TypeEnumDescriptorDefinitionSource()
+
     class Meta:
         model = ModelDescriptorDefinition
+        exclude_fields = ["source"]
+
+    def resolve_source(self, info, **kwargs):
+        return self.source
