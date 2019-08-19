@@ -8,6 +8,7 @@ from fform.orm_mt import DescriptorTreeNumber as ModelDescriptorTreeNumber
 from fform.orm_mt import DescriptorSynonym as ModelDescriptorSynonym
 from fform.orm_mt import Concept as ModelConcept
 from fform.orm_mt import Qualifier as ModelQualifier
+from fform.orm_mt import DescriptorDefinition as ModelDescriptorDefinition
 
 
 class TypeDescriptor(SQLAlchemyObjectType):
@@ -39,3 +40,8 @@ class TypeConcept(SQLAlchemyObjectType):
 class TypeQualifier(SQLAlchemyObjectType):
     class Meta:
         model = ModelQualifier
+
+
+class TypeDescriptorDefinition(SQLAlchemyObjectType):
+    class Meta:
+        model = ModelDescriptorDefinition
