@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import graphene
 from graphene_sqlalchemy import SQLAlchemyObjectType
 
 from fform.orm_mt import (
@@ -10,13 +11,21 @@ from fform.orm_mt import (
     Concept as ModelConcept,
     Qualifier as ModelQualifier,
     DescriptorDefinition as ModelDescriptorDefinition,
+    DescriptorClassType as EnumDescriptorClass,
+TypeEnumDescriptorClass = graphene.Enum.from_enum(EnumDescriptorClass)
 )
 
 
 class TypeDescriptor(SQLAlchemyObjectType):
+
+    descriptor_class = TypeEnumDescriptorClass()
+
     class Meta:
         model = ModelDescriptor
         exclude_fields = ["descriptor_class"]
+
+    def resolve_descriptor_class(self, info, **kwargs):
+        return self.descriptor_class
 
 
 class TypeTreeNumber(SQLAlchemyObjectType):
