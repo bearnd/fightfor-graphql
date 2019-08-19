@@ -1,5 +1,16 @@
 ## Changelog
 
+### v0.12.0
+
+- Fixed bug in the `resolve_count` method of the `TypeStudies` class where the `COUNT` function was not using `DISTINCT`.
+
+Issue No. 271: Expose MeSH descriptor definitions:
+
+- Created a new `TypeDescriptorDefinition` class.
+- Exposed the new `TypeDescriptorDefinition` class.
+- Updated the `TypeDescriptor` class with a working resolver for the `descriptor_class` enumeration.
+- Updated the `TypeDescriptorDefinition ` class with a working resolver for the `source` enumeration.
+
 ### v0.11.0
 
 Issue No. 242: Add a canonical facility ID filter on the `filter` and `count` resolvers of the `TypeStudies` class:
