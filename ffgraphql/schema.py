@@ -45,6 +45,7 @@ from ffgraphql.types.mt_primitives import (
     TypeDescriptorSynonym,
     TypeConcept,
     TypeQualifier,
+    TypeDescriptorDefinition,
 )
 from ffgraphql.types.pubmed_primitives import (
     TypeCitation,
@@ -220,6 +221,7 @@ schema = graphene.Schema(
         TypeDescriptorSynonym,
         TypeConcept,
         TypeQualifier,
+        TypeDescriptorDefinition,
         # PubMed primitives.
         TypeCitation,
         TypeArticle,
