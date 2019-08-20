@@ -1,5 +1,12 @@
 ## Changelog
 
+### v0.13.0
+
+Issue No. 273: Expose MeSH primitives:
+
+- Completely reworked the `mt_primitives.py` module and wrapped all available MeSH records classes as GraphQL types.
+- Exposed all newly defined MeSH GraphQL types.
+
 ### v0.12.0
 
 - Fixed bug in the `resolve_count` method of the `TypeStudies` class where the `COUNT` function was not using `DISTINCT`.
