@@ -9,6 +9,7 @@ import sqlalchemy.orm
 from fform.dal_base import DalBase
 
 from ffgraphql.config import import_config
+from ffgraphql.sentry import initialize_sentry
 from ffgraphql.api import create_api
 from ffgraphql.schema import schema
 
@@ -39,6 +40,9 @@ def get_cfg(filename_config_file=None):
 
 def main(filename_config_file=None):
     cfg = load_config(filename_config_file=filename_config_file)
+
+    # Initialize the Sentry agent.
+    initialize_sentry(cfg=cfg)
 
     dal = DalBase(
         sql_username=cfg.sql_username,
