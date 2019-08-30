@@ -89,6 +89,16 @@ auth0_dev_client_secret: !vault |
           34343330623932333565383564626362396163623239373337623830316330393739323235383439
           66616338353066303630
 
+sentry_dsn: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          62626633323930386262366266623638666638616135353564326266393561653363626531386630
+          6630333631383732663631363866346336363734373064370a383966653136613830393138396538
+          64343564383362333362623430636465313131326339623931336231316264613430356262306238
+          3239386361353230360a353162663736373331656461346130306566346536653137633331373334
+          61313638633439353061643233353061646130653064363862353862386363316239323366353139
+          62633037663436303639643134366334663264326433373965353234306330336132643431633063
+          303339656264613162326431366565373261
+
 project:
   name: "fightfor-graphql"
 
@@ -135,6 +145,10 @@ config:
       client_id: "{{ auth0_dev_client_id }}"
       client_secret: "{{ auth0_dev_client_secret }}"
 
+    # Sentry configuration settings.
+    sentry:
+      dsn:
+
   dev:
     # General Settings.
     logger_level: DEBUG
@@ -163,6 +177,10 @@ config:
       client_id: "{{ auth0_dev_client_id }}"
       client_secret: "{{ auth0_dev_client_secret }}"
 
+    # Sentry configuration settings.
+    sentry:
+      dsn:
+
   prod:
     # General Settings.
     logger_level: INFO
@@ -190,3 +208,7 @@ config:
       jwks_url: "{{ auth0_dev_jwks_url }}"
       client_id:
       client_secret:
+
+    # Sentry configuration settings.
+    sentry:
+      dsn: "{{ sentry_dsn }}"
