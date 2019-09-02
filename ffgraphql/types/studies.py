@@ -818,11 +818,12 @@ class TypeStudies(graphene.ObjectType):
 
         # Limit query to fields requested in the GraphQL query adding
         # `load_only` and `joinedload` options as required.
-        query = apply_requested_fields(
-            info=info,
-            query=query,
-            orm_class=ModelStudy,
-        )
+        if not limit and not offset:
+            query = apply_requested_fields(
+                info=info,
+                query=query,
+                orm_class=ModelStudy,
+            )
 
         # Apply the different optional filters to the query.
         query = TypeStudies._apply_query_filters(
