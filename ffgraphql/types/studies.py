@@ -375,10 +375,34 @@ class TypeStudies(graphene.ObjectType):
             ]
             query = query.filter(ModelStudy.overall_status.in_(_members))
 
+        if (
+            (cities or states or countries or facility_canonical_ids) or
+            (
+                current_location_longitude and
+                current_location_latitude and
+                distance_max_km
+            )
+        ):
+            query = query.join(ModelStudy.facilities_canonical)
+
+            # Exclude canonical facilities where the name of the facility is the
+            # same as the facility's city, state, or country cause that
+            # indicates a facility that couldn't be matched and fell back to the
+            # encompassing area.
+            query = query.filter(
+                sqlalchemy.and_(
+                    ModelFacilityCanonical.name !=
+                    ModelFacilityCanonical.country,
+                    ModelFacilityCanonical.name !=
+                    ModelFacilityCanonical.locality,
+                    ModelFacilityCanonical.name !=
+                    ModelFacilityCanonical.administrative_area_level_1,
+                )
+            )
+
         # Join to the study facility locations and apply filters if any such
         # filters are defined.
         if cities or states or countries or facility_canonical_ids:
-            query = query.join(ModelStudy.facilities_canonical)
             if cities:
                 query = query.filter(
                     ModelFacilityCanonical.locality.in_(cities),
@@ -405,7 +429,6 @@ class TypeStudies(graphene.ObjectType):
             current_location_latitude and
             distance_max_km
         ):
-            query = query.join(ModelStudy.facilities_canonical)
             # Convert distance to meters.
             distance_max_m = distance_max_km * 1000
             # Define the function to calculate the distance between the given
@@ -423,30 +446,6 @@ class TypeStudies(graphene.ObjectType):
             # If a maximum age is defined then only include studies without a
             # facility within the distance from the defined coordinates.
             query = query.filter(func_distance <= distance_max_m)
-
-        if (
-            (cities or states or countries or facility_canonical_ids) or
-            (
-                current_location_longitude and
-                current_location_latitude and
-                distance_max_km
-            )
-        ):
-
-            # Exclude canonical facilities where the name of the facility is the
-            # same as the facility's city, state, or country cause that
-            # indicates a facility that couldn't be matched and fell back to the
-            # encompassing area.
-            query = query.filter(
-                sqlalchemy.and_(
-                    ModelFacilityCanonical.name !=
-                    ModelFacilityCanonical.country,
-                    ModelFacilityCanonical.name !=
-                    ModelFacilityCanonical.locality,
-                    ModelFacilityCanonical.name !=
-                    ModelFacilityCanonical.administrative_area_level_1,
-                )
-            )
 
         # Join to the study interventions and apply filters if any such filters
         # are defined.
@@ -819,11 +818,12 @@ class TypeStudies(graphene.ObjectType):
 
         # Limit query to fields requested in the GraphQL query adding
         # `load_only` and `joinedload` options as required.
-        query = apply_requested_fields(
-            info=info,
-            query=query,
-            orm_class=ModelStudy,
-        )
+        if not limit and not offset:
+            query = apply_requested_fields(
+                info=info,
+                query=query,
+                orm_class=ModelStudy,
+            )
 
         # Apply the different optional filters to the query.
         query = TypeStudies._apply_query_filters(
