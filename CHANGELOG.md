@@ -1,5 +1,9 @@
 ## Changelog
 
+### v0.14.3
+
+- Fixed bugs in the `TypeStudiesStats` class.
+
 ### v0.14.2
 
 - Updated the various methods of the `TypeStudiesStats` class and added the canonical-facility fix where appropriate.
