@@ -1,5 +1,9 @@
 ## Changelog
 
+### v0.14.2
+
+- Updated the various methods of the `TypeStudiesStats` class and added the canonical-facility fix where appropriate.
+
 ### v0.14.1
 
 - Updated the `resolve_get_unique_cities`, `resolve_get_unique_states`, and `resolve_get_unique_countries` methods of the `TypeStudiesStats` class and replaced the repetitive code with a new `_query_unique_geographies` method.
