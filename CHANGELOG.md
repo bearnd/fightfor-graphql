@@ -1,5 +1,9 @@
 ## Changelog
 
+### v0.14.5
+
+- Fixed bug in the `resolve_count` method of the `TypeStudies` class.
+
 ### v0.14.4
 
 - Updated the `resolve_filter` and `resolve_count` of the `TypeStudies` class and added GROUP BY clauses to fix the erroneous pagination.
