@@ -45,6 +45,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/somada141/ffgraphql',
-    version='0.14.2',
+    version='0.14.3',
     zip_safe=False,
 )

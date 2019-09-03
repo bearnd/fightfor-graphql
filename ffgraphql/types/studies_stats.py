@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from typing import List, Optional, Callable
+from typing import List, Optional
 
 import sqlalchemy.orm
 import graphene
@@ -582,9 +582,7 @@ class TypeStudiesStats(graphene.ObjectType):
             func_count_studies,
         )  # type: sqlalchemy.orm.Query
 
-        query = TypeStudiesStats._add_canonical_facility_fix_filter(
-            query=query
-        )
+        query = TypeStudiesStats._add_canonical_facility_fix_filter(query=query)
 
         if study_ids:
             query = query.join(ModelFacilityCanonical.studies)
@@ -984,9 +982,7 @@ class TypeStudiesStats(graphene.ObjectType):
                 )
             )
 
-        query = TypeStudiesStats._add_canonical_facility_fix_filter(
-            query=query
-        )
+        query = TypeStudiesStats._add_canonical_facility_fix_filter(query=query)
 
         # Group by study facility.
         query = query.group_by(
@@ -1104,7 +1100,7 @@ class TypeStudiesStats(graphene.ObjectType):
             func_unique_geographies
         )  # type: sqlalchemy.orm.Query
 
-        query = TypeStudiesStats.add(query)
+        query = TypeStudiesStats._add_canonical_facility_fix_filter(query=query)
 
         if study_ids:
             query = query.join(ModelFacilityCanonical.studies)
@@ -1481,9 +1477,7 @@ class TypeStudiesStats(graphene.ObjectType):
         if study_ids:
             query = query.filter(ModelStudyFacility.study_id.in_(study_ids))
 
-        query = TypeStudiesStats._add_canonical_facility_fix_filter(
-            query=query
-        )
+        query = TypeStudiesStats._add_canonical_facility_fix_filter(query=query)
 
         objs = query.all()
 
