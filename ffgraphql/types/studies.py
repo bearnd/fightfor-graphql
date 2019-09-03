@@ -818,12 +818,11 @@ class TypeStudies(graphene.ObjectType):
 
         # Limit query to fields requested in the GraphQL query adding
         # `load_only` and `joinedload` options as required.
-        if not limit and not offset:
-            query = apply_requested_fields(
-                info=info,
-                query=query,
-                orm_class=ModelStudy,
-            )
+        query = apply_requested_fields(
+            info=info,
+            query=query,
+            orm_class=ModelStudy,
+        )
 
         # Apply the different optional filters to the query.
         query = TypeStudies._apply_query_filters(
@@ -858,6 +857,8 @@ class TypeStudies(graphene.ObjectType):
                 query = query.order_by(getattr(ModelStudy, order_by).desc())
             else:
                 query = query.order_by(getattr(ModelStudy, order_by).asc())
+
+        query = query.group_by(ModelStudy.study_id)
 
         # Apply offset (if defined).
         if offset:
@@ -928,6 +929,8 @@ class TypeStudies(graphene.ObjectType):
             age_beg=age_beg,
             age_end=age_end,
         )
+
+        query = query.group_by(ModelStudy.study_id)
 
         count = 0
         result = query.one_or_none()
