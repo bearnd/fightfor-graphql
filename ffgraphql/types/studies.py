@@ -930,8 +930,6 @@ class TypeStudies(graphene.ObjectType):
             age_end=age_end,
         )
 
-        query = query.group_by(ModelStudy.study_id)
-
         count = 0
         result = query.one_or_none()
         if result:
