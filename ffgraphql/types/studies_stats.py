@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from typing import List, Optional
+from typing import List, Optional, Callable
 
 import sqlalchemy.orm
 import graphene
@@ -1083,6 +1083,45 @@ class TypeStudiesStats(graphene.ObjectType):
         return objs
 
     @staticmethod
+    def _query_unique_geographies(
+        session: sqlalchemy.orm.Session,
+        attr: sqlalchemy.Column,
+        study_ids: List[int],
+    ) -> List[str]:
+
+        # Define the DISTINCT function.
+        func_unique_geographies = sqlalchemy_func.distinct(attr)
+
+        # Query out the unique geographies of the studies.
+        query = session.query(
+            func_unique_geographies
+        )  # type: sqlalchemy.orm.Query
+
+        # Exclude canonical facilities where the name of the facility is the
+        # same as the facility's city, state, or country cause that indicates
+        # a facility that couldn't be matched and fell back to the encompassing
+        # area.
+        query = query.filter(
+            sqlalchemy.and_(
+                ModelFacilityCanonical.name != ModelFacilityCanonical.country,
+                ModelFacilityCanonical.name != ModelFacilityCanonical.locality,
+                ModelFacilityCanonical.name !=
+                ModelFacilityCanonical.administrative_area_level_1,
+            )
+        )
+
+        if study_ids:
+            query = query.join(ModelFacilityCanonical.studies)
+            query = query.filter(ModelStudy.study_id.in_(study_ids))
+
+        results = query.all()
+
+        # Unpack the geographies out of the results.
+        geographies = [result[0] for result in results if result[0]]
+
+        return geographies
+
+    @staticmethod
     def resolve_get_unique_cities(
         args: dict,
         info: graphene.ResolveInfo,
@@ -1104,22 +1143,12 @@ class TypeStudiesStats(graphene.ObjectType):
         # automatically selects the model.
         session = info.context.get("session")  # type: sqlalchemy.orm.Session
 
-        # Define the `DISTINCT(facilities_canonical.locality)` function.
-        func_unique_cities = sqlalchemy_func.distinct(
-            ModelFacilityCanonical.locality
+        # Retrieve the unique cities out of the studies.
+        cities = TypeStudiesStats._query_unique_geographies(
+            session=session,
+            attr=ModelFacilityCanonical.locality,
+            study_ids=study_ids,
         )
-
-        # Query out the unique cities of the studies.
-        query = session.query(func_unique_cities)  # type: sqlalchemy.orm.Query
-        query = query.join(ModelStudy.facilities_canonical)
-
-        if study_ids:
-            query = query.filter(ModelStudy.study_id.in_(study_ids))
-
-        results = query.all()
-
-        # Unpack the cities out of the results.
-        cities = [result[0] for result in results if result[0]]
 
         return cities
 
@@ -1145,23 +1174,12 @@ class TypeStudiesStats(graphene.ObjectType):
         # automatically selects the model.
         session = info.context.get("session")  # type: sqlalchemy.orm.Session
 
-        # Define the
-        # `DISTINCT(facilities_canonical.administrative_area_level_1)` function.
-        func_unique_states = sqlalchemy_func.distinct(
-            ModelFacilityCanonical.administrative_area_level_1,
+        # Retrieve the unique states out of the studies.
+        states = TypeStudiesStats._query_unique_geographies(
+            session=session,
+            attr=ModelFacilityCanonical.administrative_area_level_1,
+            study_ids=study_ids,
         )
-
-        # Query out the unique states of the studies.
-        query = session.query(func_unique_states)  # type: sqlalchemy.orm.Query
-        query = query.join(ModelStudy.facilities_canonical)
-
-        if study_ids:
-            query = query.filter(ModelStudy.study_id.in_(study_ids))
-
-        results = query.all()
-
-        # Unpack the states out of the results.
-        states = [result[0] for result in results if result[0]]
 
         return states
 
@@ -1187,24 +1205,12 @@ class TypeStudiesStats(graphene.ObjectType):
         # automatically selects the model.
         session = info.context.get("session")  # type: sqlalchemy.orm.Session
 
-        # Define the `DISTINCT(facilities_canonical.country)` function.
-        func_unique_countries = sqlalchemy_func.distinct(
-            ModelFacilityCanonical.country,
+        # Retrieve the unique countries out of the studies.
+        countries = TypeStudiesStats._query_unique_geographies(
+            session=session,
+            attr=ModelFacilityCanonical.country,
+            study_ids=study_ids,
         )
-
-        # Query out the unique countries of the studies.
-        query = session.query(
-            func_unique_countries,
-        )  # type: sqlalchemy.orm.Query
-        query = query.join(ModelStudy.facilities_canonical)
-
-        if study_ids:
-            query = query.filter(ModelStudy.study_id.in_(study_ids))
-
-        results = query.all()
-
-        # Unpack the countries out of the results.
-        countries = [result[0] for result in results if result[0]]
 
         return countries
 
