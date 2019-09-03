@@ -1,5 +1,9 @@
 ## Changelog
 
+### v0.14.1
+
+- Updated the `resolve_get_unique_cities`, `resolve_get_unique_states`, and `resolve_get_unique_countries` methods of the `TypeStudiesStats` class and replaced the repetitive code with a new `_query_unique_geographies` method.
+
 ### v0.14.0
 
 Issue No. 277: Add Sentry to fightfor-graphql:
