@@ -1,5 +1,18 @@
 ## Changelog
 
+### v0.14.0
+
+Issue No. 277: Add Sentry to fightfor-graphql:
+
+- Added encrypted Sentry DSN configuration to Ansible role.
+- Added a new `sentry.py` module with a function to initialize the Sentry agent configured to work with Falcon and SQLAlchemy.
+- Updated the `main` function of the `ffgraphql.py` module to initialize the Sentry agent.
+
+Issue No. 86: `StudiesListComponent` pagination returns incorrect number of studies when filters are in effect:
+
+- Updated the `_apply_query_filters` method of the `TypeStudies` class to only join-load facilities once if either facility IDs or geographical filters have been applied.
+- Updated the `resolve_filter` method of the `TypeStudies` class to only execute the `apply_requested_fields` function if no LIMIT or OFFSET directives are to be applied as the joined-loads in `apply_requested_fields` cause incorrect pagination.
+
 ### v0.13.0
 
 Issue No. 273: Expose MeSH primitives:
