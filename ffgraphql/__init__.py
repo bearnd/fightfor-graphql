@@ -4,7 +4,7 @@
 
 __author__ = """Adamos Kyriakou"""
 __email__ = 'adam@bearnd.io'
-__version__ = '0.14.3'
+__version__ = '0.14.4'
 
 from ffgraphql import config
 from ffgraphql import excs
