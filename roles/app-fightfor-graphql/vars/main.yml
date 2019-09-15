@@ -159,7 +159,6 @@ config:
       audience: "{{ auth0_dev_audience }}"
       jwks_url: "{{ auth0_jwks_url }}"
       client_id: "{{ auth0_dev_client_id }}"
-      client_secret: "{{ auth0_dev_client_secret }}"
 
     # Sentry configuration settings.
     sentry:
@@ -191,7 +190,6 @@ config:
       audience: "{{ auth0_dev_audience }}"
       jwks_url: "{{ auth0_jwks_url }}"
       client_id: "{{ auth0_dev_client_id }}"
-      client_secret: "{{ auth0_dev_client_secret }}"
 
     # Sentry configuration settings.
     sentry:
@@ -221,7 +219,6 @@ config:
     auth0:
       audience: "{{ auth0_dev_audience }}"
       client_id:
-      client_secret:
       domain: "{{ auth0_domain }}"
       jwks_url: "{{ auth0_jwks_url }}"
 
