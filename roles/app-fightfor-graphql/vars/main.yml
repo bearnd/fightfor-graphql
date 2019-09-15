@@ -43,8 +43,8 @@ postgresql_extensions:
   - pg_trgm
   - postgis
 
-# Auth0 variables.
-auth0_dev_domain: !vault |
+# Auth0 shared variables.
+auth0_domain: !vault |
   $ANSIBLE_VAULT;1.1;AES256
   34363234613261656238396161356432313061343461313962313866663532633035386562313136
   3336303236643566353363333563313666396566343736310a626662396239636539303265386130
@@ -60,7 +60,7 @@ auth0_dev_audience: !vault |
   3966633863353435330a303731616664373363366464333439306530636563356363353631306261
   65326538303539646132353762373734313937383166626437373631653238336362
 
-auth0_dev_jwks_url: !vault |
+auth0_jwks_url: !vault |
   $ANSIBLE_VAULT;1.1;AES256
   36633665633035323538643132633737326131346464326134323866643637663836373766323365
   3130363638313536626135623537346266623237623832300a313238643130353033633766623631
@@ -149,9 +149,9 @@ config:
 
     # Auth0 configuration settings.
     auth0:
-      domain: "{{ auth0_dev_domain }}"
+      domain: "{{ auth0_domain }}"
       audience: "{{ auth0_dev_audience }}"
-      jwks_url: "{{ auth0_dev_jwks_url }}"
+      jwks_url: "{{ auth0_jwks_url }}"
       client_id: "{{ auth0_dev_client_id }}"
       client_secret: "{{ auth0_dev_client_secret }}"
 
@@ -181,9 +181,9 @@ config:
 
     # Auth0 configuration settings.
     auth0:
-      domain: "{{ auth0_dev_domain }}"
+      domain: "{{ auth0_domain }}"
       audience: "{{ auth0_dev_audience }}"
-      jwks_url: "{{ auth0_dev_jwks_url }}"
+      jwks_url: "{{ auth0_jwks_url }}"
       client_id: "{{ auth0_dev_client_id }}"
       client_secret: "{{ auth0_dev_client_secret }}"
 
@@ -213,11 +213,11 @@ config:
 
     # Auth0 configuration settings.
     auth0:
-      domain: "{{ auth0_dev_domain }}"
       audience: "{{ auth0_dev_audience }}"
-      jwks_url: "{{ auth0_dev_jwks_url }}"
       client_id:
       client_secret:
+      domain: "{{ auth0_domain }}"
+      jwks_url: "{{ auth0_jwks_url }}"
 
     # Sentry configuration settings.
     sentry:
