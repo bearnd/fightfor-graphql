@@ -7,6 +7,12 @@
   ignore_errors: true
   become: true
 
+- name: Add the Deadsnakes apt repository to sources.
+  apt_repository:
+    repo: ppa:deadsnakes/ppa
+    state: present
+    update_cache: yes
+
 - name: Install apt dependencies.
   apt:
     name: "{{ item }}"
