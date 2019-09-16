@@ -469,10 +469,18 @@ class TypeStudies(graphene.ObjectType):
 
         # Apply a gender filter if defined.
         if gender:
-            query = query.filter(
-                ModelEligibility.gender ==
-                EnumGender.get_member(value=str(gender)),
-            )
+            if gender == EnumGender.ALL:
+                query = query.filter(
+                    ModelEligibility.gender == EnumGender.ALL.value,
+                )
+            elif gender in [EnumGender.FEMALE, EnumGender.MALE]:
+                _value = EnumGender.get_member(value=str(gender))
+                query = query.filter(
+                    sqlalchemy.or_(
+                        ModelEligibility.gender == EnumGender.ALL.value,
+                        ModelEligibility.gender == _value,
+                    )
+                )
 
         # Filter studies the year of their start-date.
         if year_beg:
@@ -685,10 +693,18 @@ class TypeStudies(graphene.ObjectType):
 
         # Apply a gender filter if defined.
         if gender:
-            query = query.filter(
-                ModelEligibility.gender ==
-                EnumGender.get_member(value=str(gender)),
-            )
+            if gender == EnumGender.ALL:
+                query = query.filter(
+                    ModelEligibility.gender == EnumGender.ALL.value,
+                )
+            elif gender in [EnumGender.FEMALE, EnumGender.MALE]:
+                _value = EnumGender.get_member(value=str(gender))
+                query = query.filter(
+                    sqlalchemy.or_(
+                        ModelEligibility.gender == EnumGender.ALL.value,
+                        ModelEligibility.gender == _value,
+                    )
+                )
 
         # Filter studies by the minimum eligibility age.
         if age_beg:
