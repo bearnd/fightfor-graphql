@@ -1,5 +1,12 @@
 ## Changelog
 
+### v0.15.0
+
+- Story No. 1081: Port `fightfor-graphql` to Python 3.7.
+- Story No. 1106: Switch `fightfor-graphql` Git deployment to GitLab.com.
+- Story No. 1145: Add production Auth0 to `fightfor-graphql`.
+- Story No. 1169: Erroneous filtering on canonical facilities.
+
 ### v0.14.5
 
 - Fixed bug in the `resolve_count` method of the `TypeStudies` class.

@@ -5,7 +5,11 @@ dependencies:
     - git
     - htop
     - build-essential
-    - python3-dev
+    - software-properties-common
+    - python3.7
+    - python3.7-dev
+    - python3.7-venv
+    - python3.7-distutils
     - python-pip
     - python3-pip
     - libxslt1-dev
@@ -18,9 +22,9 @@ dependencies:
     - postgresql-9.5-postgis-scripts
   pip:
     system:
-      - pip==9.0.1
-      - setuptools==36.2.7
-      - virtualenv==15.1.0
+      - pip==19.2.3
+      - setuptools==41.2.0
+      - virtualenv==16.7.5
     virtualenv:
-      - ipython==6.1.0
+      - ipython==7.8.0
       - gunicorn==19.9.0

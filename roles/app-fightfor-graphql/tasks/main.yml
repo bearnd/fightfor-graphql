@@ -7,6 +7,12 @@
   ignore_errors: true
   become: true
 
+- name: Add the Deadsnakes apt repository to sources.
+  apt_repository:
+    repo: ppa:deadsnakes/ppa
+    state: present
+    update_cache: yes
+
 - name: Install apt dependencies.
   apt:
     name: "{{ item }}"
@@ -113,45 +119,18 @@
     name: "{{ item }}"
     state: latest
     virtualenv: "{{ system.directories.virtual_env }}"
-    virtualenv_python: python3.5
+    virtualenv_python: python3.7
   with_items: "{{ dependencies.pip.virtualenv }}"
   become: true
   become_user: "{{ system.user }}"
 
-- name: Create .ssh directory (Production)
-  file:
-    state: directory
-    path: "/home/{{ system.user }}/.ssh"
-    owner: "{{ system.user }}"
-    mode: 0600
-  become: true
-  when: is_vagrant is not defined or is_vagrant == False
-
-- name: Upload public deployment key (Production)
-  copy:
-    src: "deployment_key.public"
-    dest: "/home/{{ system.user }}/.ssh/deployment_key.public"
-    owner: "{{ system.user }}"
-    mode: 0600
-  when: is_vagrant is not defined or is_vagrant == False
-
-- name: Upload private deployment key (Production)
-  copy:
-    src: "deployment_key.private"
-    dest: "/home/{{ system.user }}/.ssh/deployment_key.private"
-    owner: "{{ system.user }}"
-    mode: 0600
-  when: is_vagrant is not defined or is_vagrant == False
-
 - name: Checkout the project source code from Git (Production)
   git:
-    repo: "ssh://git@sunny.diskstation.me/bearnd/fightfor-graphql.git"
+    repo: "https://{{ gitlab_deploy_token_username }}:{{ gitlab_deploy_token_password }}@gitlab.com/bearnd/fightfor-graphql.git"
     dest: "{{ system.directories.share }}/src"
     depth: 1
     force: yes
     accept_hostkey: true
-    ssh_opts: "-o StrictHostKeyChecking=no  -o Port=30001"
-    key_file: "/home/{{ system.user }}/.ssh/deployment_key.private"
   when: is_vagrant is not defined or is_vagrant == False
   become: true
 
@@ -216,7 +195,7 @@
     requirements: requirements_dev.txt
     state: latest
     virtualenv: "{{ system.directories.virtual_env }}"
-    virtualenv_python: python3.5
+    virtualenv_python: python3.7
   when: is_vagrant is defined and is_vagrant == True
   become: true
   become_user: "{{ system.user }}"
@@ -227,7 +206,7 @@
     requirements: requirements.txt
     state: latest
     virtualenv: "{{ system.directories.virtual_env }}"
-    virtualenv_python: python3.5
+    virtualenv_python: python3.7
   become: true
   become_user: "{{ system.user }}"
   when: is_vagrant is not defined or is_vagrant == False
