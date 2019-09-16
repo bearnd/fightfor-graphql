@@ -1,5 +1,9 @@
 ## Changelog
 
+### v0.16.0
+
+- Story No. 1081: Gender-filtering should include both the gender and ALL. 
+
 ### v0.15.0
 
 - Story No. 1081: Port `fightfor-graphql` to Python 3.7.
