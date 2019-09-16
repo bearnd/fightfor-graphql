@@ -24,6 +24,7 @@ from ffgraphql.types.mt_primitives import ModelDescriptor
 from ffgraphql.types.mt_primitives import TypeDescriptor
 from ffgraphql.utils import extract_requested_fields
 from ffgraphql.utils import apply_requested_fields
+from ffgraphql.types.utils import add_canonical_facility_fix_filter
 
 
 class TypeCountStudiesCountry(graphene.ObjectType):
@@ -428,33 +429,6 @@ class TypeStudiesStats(graphene.ObjectType):
     )
 
     @staticmethod
-    def _add_canonical_facility_fix_filter(
-        query: sqlalchemy.orm.Query,
-    ) -> sqlalchemy.orm.Query:
-        """ Adds a filter to the `query` to exclude canonical facilities where
-            the name of the facility is the same as the facility's city, state,
-            or country cause that indicates a facility that couldn't be matched
-            and fell back to the encompassing area.
-
-        Args:
-            query (sqlalchemy.orm.Query): The query on which to add the filter.
-
-        Returns:
-            sqlalchemy.orm.Query: The updated query.
-        """
-
-        query = query.filter(
-            sqlalchemy.and_(
-                ModelFacilityCanonical.name != ModelFacilityCanonical.country,
-                ModelFacilityCanonical.name != ModelFacilityCanonical.locality,
-                ModelFacilityCanonical.name !=
-                ModelFacilityCanonical.administrative_area_level_1,
-            )
-        )
-
-        return query
-
-    @staticmethod
     def _apply_query_filters(
         query: sqlalchemy.orm.query.Query,
         study_ids: List[int],
@@ -489,9 +463,7 @@ class TypeStudiesStats(graphene.ObjectType):
             )
         ):
             query = query.join(ModelStudy.facilities_canonical)
-            query = TypeStudiesStats._add_canonical_facility_fix_filter(
-                query=query
-            )
+            query = add_canonical_facility_fix_filter(query=query)
 
         # Join to the study facility locations and apply filters if any such
         # filters are defined.
@@ -582,7 +554,7 @@ class TypeStudiesStats(graphene.ObjectType):
             func_count_studies,
         )  # type: sqlalchemy.orm.Query
 
-        query = TypeStudiesStats._add_canonical_facility_fix_filter(query=query)
+        query = add_canonical_facility_fix_filter(query=query)
 
         if study_ids:
             query = query.join(ModelFacilityCanonical.studies)
@@ -982,7 +954,7 @@ class TypeStudiesStats(graphene.ObjectType):
                 )
             )
 
-        query = TypeStudiesStats._add_canonical_facility_fix_filter(query=query)
+        query = add_canonical_facility_fix_filter(query=query)
 
         # Group by study facility.
         query = query.group_by(
@@ -1100,7 +1072,7 @@ class TypeStudiesStats(graphene.ObjectType):
             func_unique_geographies
         )  # type: sqlalchemy.orm.Query
 
-        query = TypeStudiesStats._add_canonical_facility_fix_filter(query=query)
+        query = add_canonical_facility_fix_filter(query=query)
 
         if study_ids:
             query = query.join(ModelFacilityCanonical.studies)
@@ -1477,7 +1449,7 @@ class TypeStudiesStats(graphene.ObjectType):
         if study_ids:
             query = query.filter(ModelStudyFacility.study_id.in_(study_ids))
 
-        query = TypeStudiesStats._add_canonical_facility_fix_filter(query=query)
+        query = add_canonical_facility_fix_filter(query=query)
 
         objs = query.all()
 
