@@ -30,6 +30,7 @@ from ffgraphql.types.mt_primitives import ModelTreeNumber
 from ffgraphql.types.mt_primitives import ModelDescriptor
 from ffgraphql.types.mt_primitives import ModelDescriptorTreeNumber
 from ffgraphql.utils import apply_requested_fields
+from ffgraphql.types.utils import add_canonical_facility_fix_filter
 
 
 class TypeStudies(graphene.ObjectType):
@@ -384,21 +385,7 @@ class TypeStudies(graphene.ObjectType):
             )
         ):
             query = query.join(ModelStudy.facilities_canonical)
-
-            # Exclude canonical facilities where the name of the facility is the
-            # same as the facility's city, state, or country cause that
-            # indicates a facility that couldn't be matched and fell back to the
-            # encompassing area.
-            query = query.filter(
-                sqlalchemy.and_(
-                    ModelFacilityCanonical.name !=
-                    ModelFacilityCanonical.country,
-                    ModelFacilityCanonical.name !=
-                    ModelFacilityCanonical.locality,
-                    ModelFacilityCanonical.name !=
-                    ModelFacilityCanonical.administrative_area_level_1,
-                )
-            )
+            query = add_canonical_facility_fix_filter(query=query)
 
         # Join to the study facility locations and apply filters if any such
         # filters are defined.
