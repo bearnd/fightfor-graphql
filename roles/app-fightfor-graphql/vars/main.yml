@@ -151,7 +151,8 @@ config:
       workers: 1
       threads: 1
       worker_class: sync
-      timeout: 60
+      graceful_timeout: 120
+      timeout: 130
 
     # Auth0 configuration settings.
     auth0:
@@ -182,7 +183,8 @@ config:
       workers: 1
       threads: 1
       worker_class: sync
-      timeout: 60
+      graceful_timeout: 120
+      timeout: 130
 
     # Auth0 configuration settings.
     auth0:
@@ -213,7 +215,8 @@ config:
       workers: 4
       threads: 4
       worker_class: sync
-      timeout: 60
+      graceful_timeout: 120
+      timeout: 130
 
     # Auth0 configuration settings.
     auth0:
