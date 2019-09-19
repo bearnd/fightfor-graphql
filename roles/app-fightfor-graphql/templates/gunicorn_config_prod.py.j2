@@ -32,7 +32,7 @@ max_requests_jitter = 7040
 timeout = {{ config.prod.gunicorn.timeout }}
 
 # set time to finish services before restart when signal is received
-graceful_timeout = {{ config.prod.gunicorn.timeout }}
+graceful_timeout = {{ config.prod.gunicorn.graceful_timeout }}
 
 # set keepalive HTTP connection wait time for next request (in seconds)
 keepalive = 2
