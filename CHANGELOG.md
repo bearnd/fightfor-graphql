@@ -1,5 +1,10 @@
 ## Changelog
 
+### v0.17.0
+
+- Story No. 1229: IndexError: tuple index out of range.
+- Story No. 1231: Error: Network error: Http failure response: 504 Gateway Timeout.
+
 ### v0.16.0
 
 - Story No. 1081: Gender-filtering should include both the gender and ALL. 
