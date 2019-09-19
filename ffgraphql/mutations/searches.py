@@ -87,9 +87,10 @@ class MutationSearchUpsert(graphene.Mutation):
 
         # Raise an exception if the requested user could not be found.
         if not user:
-            msg = "User with Auth0 ID '{}' could not be found."
-            msg_fmt = msg.format(auth0_user_id)
-            raise graphql.GraphQLError(message=msg_fmt)
+            raise graphql.GraphQLError(
+                message=f"User with Auth0 ID '{auth0_user_id}' could not be "
+                        f"found."
+            )
 
         # Upsert the `ModelSearch` record.
         statement = insert(
@@ -192,19 +193,20 @@ class MutationSearchDelete(graphene.Mutation):
 
         # Raise an exception if the requested user could not be found.
         if not user:
-            msg = "User with Auth0 ID '{}' could not be found."
-            msg_fmt = msg.format(auth0_user_id)
-            raise graphql.GraphQLError(message=msg_fmt)
+            raise graphql.GraphQLError(
+                message=f"User with Auth0 ID '{auth0_user_id}' could not be "
+                        f"found."
+            )
 
         # Retrieve the `ModelSearch` record object.
         search = get_search(session=session, search_uuid=search_uuid)
 
         # Raise an exception if the requested search could not be found.
         if not search:
-            msg = ("Search with UUID '{}' under user with Auth0 ID '{}' "
-                   "could not be found.")
-            msg_fmt = msg.format(search_uuid, auth0_user_id)
-            raise graphql.GraphQLError(message=msg_fmt)
+            raise graphql.GraphQLError(
+                message=f"Search with UUID '{search_uuid}' under user with "
+                        f"Auth0 ID '{auth0_user_id}' could not be found."
+            )
 
         # Delete the `ModelSearch` record and all its related `ModelUserSearch`
         # and `ModelSearchDescriptor` records.
