@@ -203,7 +203,7 @@ class MutationSearchDelete(graphene.Mutation):
         if not search:
             msg = ("Search with UUID '{}' under user with Auth0 ID '{}' "
                    "could not be found.")
-            msg_fmt = msg.format(auth0_user_id)
+            msg_fmt = msg.format(search_uuid, auth0_user_id)
             raise graphql.GraphQLError(message=msg_fmt)
 
         # Delete the `ModelSearch` record and all its related `ModelUserSearch`
