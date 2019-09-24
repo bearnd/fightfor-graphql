@@ -1,5 +1,9 @@
 ## Changelog
 
+### v0.18.0
+
+- Story No. 1381: Expose `StudyDates`.
+
 ### v0.17.0
 
 - Story No. 1229: IndexError: tuple index out of range.
