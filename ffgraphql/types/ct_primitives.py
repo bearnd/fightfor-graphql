@@ -7,6 +7,7 @@ from fform.orm_ct import Study as ModelStudy
 from fform.orm_ct import Location as ModelLocation
 from fform.orm_ct import Facility as ModelFacility
 from fform.orm_ct import StudyFacility as ModelStudyFacility
+from fform.orm_ct import StudyDates as ModelStudyDates
 from fform.orm_ct import FacilityCanonical as ModelFacilityCanonical
 from fform.orm_ct import Intervention as ModelIntervention
 from fform.orm_ct import Condition as ModelCondition
@@ -183,6 +184,11 @@ class TypeEligibility(SQLAlchemyObjectType):
 class TypeStudyFacility(SQLAlchemyObjectType):
     class Meta:
         model = ModelStudyFacility
+
+
+class TypeStudyDates(SQLAlchemyObjectType):
+    class Meta:
+        model = ModelStudyDates
 
 
 class TypeEnrollment(SQLAlchemyObjectType):
