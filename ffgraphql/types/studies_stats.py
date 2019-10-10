@@ -768,6 +768,12 @@ class TypeStudiesStats(graphene.ObjectType):
                 query = query.order_by(
                     getattr(ModelFacilityCanonical, order_by).asc(),
                 )
+        # Order by the number of studies.
+        else:
+            if order == TypeEnumOrder.ASC.value:
+                query = query.order_by(func_count_studies.asc())
+            else:
+                query = query.order_by(func_count_studies.desc())
 
         # Apply offset (if defined).
         if offset:
