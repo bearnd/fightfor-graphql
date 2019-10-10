@@ -722,8 +722,6 @@ class TypeStudiesStats(graphene.ObjectType):
 
         # Group by study facility.
         query = query.group_by(ModelFacilityCanonical.facility_canonical_id)
-        # Order by the number of studies.
-        query = query.order_by(func_count_studies.desc())
 
         # Extract the fields requested in the GraphQL query.
         fields = extract_requested_fields(
