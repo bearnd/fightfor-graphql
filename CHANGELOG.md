@@ -1,5 +1,9 @@
 ## Changelog
 
+### v0.19.0
+
+- Story No. 1398: Column ordering does not work in `FacilitiesListComponent`.
+
 ### v0.18.0
 
 - Story No. 1381: Expose `StudyDates`.
