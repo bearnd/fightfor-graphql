@@ -492,53 +492,49 @@ class TypeStudies(graphene.ObjectType):
                 ModelStudy.start_date <= datetime.date(year_end, 12, 31)
             )
 
-        # Filter studies by the minimum eligibility age.
-        if age_beg:
-            # Convert to seconds.
+        # Filter studies by eligibility age.
+        if age_beg or age_end:
+            # Convert the ages in years to seconds.
             age_beg_sec = age_beg * 31536000
+            age_end_sec = age_end * 31536000
+
             # Define the function to convert the minimum eligible age of each
             # study to seconds.
-            func_age_beg_sec = sqlalchemy_func.extract(
-                "EPOCH",
-                sqlalchemy_func.cast(
-                    ModelEligibility.minimum_age,
-                    postgresql.INTERVAL,
+            func_age_beg_sec = sqlalchemy_func.cast(
+                sqlalchemy_func.extract(
+                    "EPOCH",
+                    sqlalchemy_func.cast(
+                        ModelEligibility.minimum_age,
+                        postgresql.INTERVAL,
+                    ),
                 ),
+                postgresql.BIGINT,
             )
 
-            # If an minimum age is defined then only include studies without a
-            # minimum eligible age or a minimum age greater than or equal to the
-            # defined one.
-            query = query.filter(
-                sqlalchemy.or_(
-                    func_age_beg_sec.is_(None),
-                    func_age_beg_sec >= age_beg_sec,
-                ),
-            )
-
-        # Filter studies by the maximum eligibility age.
-        if age_end:
-            # Convert to seconds.
-            age_end_sec = age_end * 31536000
             # Define the function to convert the maximum eligible age of each
             # study to seconds.
-            func_age_end_sec = sqlalchemy_func.extract(
-                "EPOCH",
-                sqlalchemy_func.cast(
-                    ModelEligibility.maximum_age,
-                    postgresql.INTERVAL,
+            func_age_end_sec = sqlalchemy_func.cast(
+                sqlalchemy_func.extract(
+                    "EPOCH",
+                    sqlalchemy_func.cast(
+                        ModelEligibility.maximum_age,
+                        postgresql.INTERVAL,
+                    ),
                 ),
+                postgresql.BIGINT,
             )
 
-            # If an maximum age is defined then only include studies without a
-            # maximum eligible age or a maximum age less than or equal to the
-            # defined one.
-            query = query.filter(
-                sqlalchemy.or_(
-                    func_age_end_sec.is_(None),
-                    func_age_end_sec <= age_end_sec,
-                ),
+            # Define INT8RANGE ranges on the requested and study ages.
+            range_age_user = sqlalchemy_func.int8range(
+                age_beg_sec, age_end_sec,
             )
+            range_age_studies = sqlalchemy_func.int8range(
+                func_age_beg_sec, func_age_end_sec
+            )
+
+            # Filter studies with an eligibility age range overlapping the
+            # user-defined age-range.
+            query = query.filter(range_age_user.op("&&")(range_age_studies))
 
         return query
 
