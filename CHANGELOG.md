@@ -1,5 +1,9 @@
 ## Changelog
 
+### v0.20.0
+
+- Story No. 1597: Age thresholds do not appear to work.
+
 ### v0.19.0
 
 - Story No. 1398: Column ordering does not work in `FacilitiesListComponent`.
