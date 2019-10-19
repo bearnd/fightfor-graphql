@@ -425,16 +425,8 @@ class TypeStudies(graphene.ObjectType):
             ]
             query = query.filter(ModelStudy.overall_status.in_(_members))
 
-        if (
-            (cities or states or countries or facility_canonical_ids) or
-            (
-                current_location_longitude and
-                current_location_latitude and
-                distance_max_km
-            )
-        ):
-            query = query.join(ModelStudy.facilities_canonical)
-            query = add_canonical_facility_fix_filter(query=query)
+        query = query.join(ModelStudy.facilities_canonical)
+        query = add_canonical_facility_fix_filter(query=query)
 
         # Join to the study facility locations and apply filters if any such
         # filters are defined.
