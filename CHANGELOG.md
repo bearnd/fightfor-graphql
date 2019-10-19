@@ -1,5 +1,9 @@
 ## Changelog
 
+### v0.20.2
+
+- Story No. 1419: Geographical regions still appear as facilities.
+
 ### v0.20.1
 
 - Story No. 1642: TypeError: unsupported operand type(s) for *: 'NoneType' and 'int'.
