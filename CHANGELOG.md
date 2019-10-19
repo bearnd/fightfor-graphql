@@ -1,5 +1,9 @@
 ## Changelog
 
+### v0.20.1
+
+- Story No. 1642: TypeError: unsupported operand type(s) for *: 'NoneType' and 'int'.
+
 ### v0.20.0
 
 - Story No. 1597: Age thresholds do not appear to work.
