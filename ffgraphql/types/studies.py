@@ -350,8 +350,8 @@ class TypeStudies(graphene.ObjectType):
     ) -> sqlalchemy.orm.query.Query:
 
         # Convert the ages in years to seconds.
-        age_beg_sec = age_beg * 31536000
-        age_end_sec = age_end * 31536000
+        age_beg_sec = age_beg * 31536000 if age_beg else None
+        age_end_sec = age_end * 31536000 if age_end else None
 
         # Define the function to convert the minimum eligible age of each
         # study to seconds.
