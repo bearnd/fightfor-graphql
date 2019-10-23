@@ -1,5 +1,10 @@
 ## Changelog
 
+### v0.21.0
+
+- Story No. 1651: Fix facility-name guard.
+- Story No. 1686: Add country-filtering to queries that retrieve unique geographical entities.
+
 ### v0.20.2
 
 - Story No. 1419: Geographical regions still appear as facilities.
