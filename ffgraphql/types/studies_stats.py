@@ -434,6 +434,11 @@ class TypeStudiesStats(graphene.ObjectType):
                         "operation within.",
             required=True,
         ),
+        countries=graphene.Argument(
+            type=graphene.List(of_type=graphene.String),
+            description="A list of countries to filter by.",
+            required=False,
+        ),
         description="Retrieves the unique canonical facilities pertaining to "
                     "a list of clinical-trial studies.",
     )
@@ -1430,6 +1435,7 @@ class TypeStudiesStats(graphene.ObjectType):
         args: dict,
         info: graphene.ResolveInfo,
         study_ids: List[int],
+        countries: Optional[List[str]] = None,
     ) -> List[TypeFacilityCanonical]:
         """ Retrieves the unique canonical facilities pertaining to a list of
             clinical-trial studies.
@@ -1439,6 +1445,8 @@ class TypeStudiesStats(graphene.ObjectType):
             info (graphene.ResolveInfo): The resolver info.
             study_ids (List[int]): A list of clinical-trial study PK IDs to
                 perform the operation within.
+            countries (Optional[List[str]] = None): A list of countries to
+                filter by.
 
         Returns:
              List[TypeFacilityCanonical]: The list of `TypeFacilityCanonical`
@@ -1466,6 +1474,9 @@ class TypeStudiesStats(graphene.ObjectType):
 
         if study_ids:
             query = query.filter(ModelStudyFacility.study_id.in_(study_ids))
+
+        if countries:
+            query = query.filter(ModelFacilityCanonical.country.in_(countries))
 
         query = add_canonical_facility_fix_filter(query=query)
 
