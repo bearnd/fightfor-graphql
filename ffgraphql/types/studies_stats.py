@@ -1057,7 +1057,8 @@ class TypeStudiesStats(graphene.ObjectType):
     def _query_unique_geographies(
         session: sqlalchemy.orm.Session,
         attr: sqlalchemy.Column,
-        study_ids: List[int],
+        study_ids: Optional[List[int]] = None,
+        countries: Optional[List[str]] = None,
     ) -> List[str]:
 
         # Define the DISTINCT function.
@@ -1073,6 +1074,9 @@ class TypeStudiesStats(graphene.ObjectType):
         if study_ids:
             query = query.join(ModelFacilityCanonical.studies)
             query = query.filter(ModelStudy.study_id.in_(study_ids))
+
+        if countries:
+            query = query.filter(ModelFacilityCanonical.country.in_(countries))
 
         results = query.all()
 
