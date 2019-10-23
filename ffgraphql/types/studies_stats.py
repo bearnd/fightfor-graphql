@@ -329,6 +329,11 @@ class TypeStudiesStats(graphene.ObjectType):
                         "operation within.",
             required=True,
         ),
+        countries=graphene.Argument(
+            type=graphene.List(of_type=graphene.String),
+            description="A list of countries to filter by.",
+            required=False,
+        ),
     )
 
     get_unique_states = graphene.List(
@@ -1090,6 +1095,7 @@ class TypeStudiesStats(graphene.ObjectType):
         args: dict,
         info: graphene.ResolveInfo,
         study_ids: List[int],
+        countries: Optional[List[str]] = None,
     ) -> List[str]:
         """Retrieves a list of unique cities out of a list of clinical-trial
         studies.
@@ -1098,6 +1104,8 @@ class TypeStudiesStats(graphene.ObjectType):
             args (dict): The resolver arguments.
             info (graphene.ResolveInfo): The resolver info.
             study_ids (List[int]): A list of Study IDs.
+            countries (Optional[List[str]] = None): A list of countries to
+                filter by.
 
         Returns:
              list[str]: The list of unique cities.
@@ -1112,6 +1120,7 @@ class TypeStudiesStats(graphene.ObjectType):
             session=session,
             attr=ModelFacilityCanonical.locality,
             study_ids=study_ids,
+            countries=countries,
         )
 
         return cities
