@@ -91,11 +91,31 @@ from ffgraphql.types.app_primitives import (
     TypeUserStudy,
     TypeUserCitation,
 )
+from ffgraphql.types.mp_primitives import (
+    TypeHealthTopicGroupClass,
+    TypeHealthTopicGroup,
+    TypeBodyPart,
+    TypeAlsoCalled,
+    TypePrimaryInstitute,
+    TypeSeeReference,
+    TypeHealthTopicHealthTopicGroup,
+    TypeHealthTopicAlsoCalled,
+    TypeHealthTopicDescriptor,
+    TypeHealthTopicRelatedHealthTopic,
+    TypeHealthTopicSeeReference,
+    TypeHealthTopicBodyPart,
+    TypeHealthTopic,
+)
 from ffgraphql.types.studies import TypeStudies
 from ffgraphql.types.descriptors import TypeDescriptors
 from ffgraphql.types.citations import TypeCitations
 from ffgraphql.types.users import TypeUsers
 from ffgraphql.types.searches import TypeSearches
+from ffgraphql.types.health_topics import (
+    TypeHealthTopics,
+    TypeHealthTopicGroups,
+    TypeBodyParts,
+)
 from ffgraphql.types.studies_stats import (
     TypeCountStudiesCountry,
     TypeCountStudiesOverallStatus,
@@ -156,6 +176,21 @@ class Query(graphene.ObjectType):
 
     searches = graphene.Field(type=TypeSearches, description="User searches.")
 
+    health_topics = graphene.Field(
+        type=TypeHealthTopics,
+        description="MedlinePlus health-topics.",
+    )
+
+    health_topic_groups = graphene.Field(
+        type=TypeHealthTopicGroups,
+        description="MedlinePlus health-topic groups.",
+    )
+
+    body_parts = graphene.Field(
+        type=TypeBodyParts,
+        description="MedlinePlus body-parts.",
+    )
+
     @staticmethod
     def resolve_studies_stats(args, info):
         return TypeStudiesStats
@@ -183,6 +218,18 @@ class Query(graphene.ObjectType):
     @staticmethod
     def resolve_searches(args, info):
         return TypeSearches
+
+    @staticmethod
+    def resolve_health_topics(args, info):
+        return TypeHealthTopics
+
+    @staticmethod
+    def resolve_health_topic_groups(args, info):
+        return TypeHealthTopicGroups
+
+    @staticmethod
+    def resolve_body_parts(args, info):
+        return TypeBodyParts
 
 
 class Mutation(graphene.ObjectType):
@@ -290,6 +337,20 @@ schema = graphene.Schema(
         TypeSearchDescriptor,
         TypeUserStudy,
         TypeUserCitation,
+        # MedlinePlus primitives.
+        TypeHealthTopicGroupClass,
+        TypeHealthTopicGroup,
+        TypeBodyPart,
+        TypeAlsoCalled,
+        TypePrimaryInstitute,
+        TypeSeeReference,
+        TypeHealthTopicHealthTopicGroup,
+        TypeHealthTopicAlsoCalled,
+        TypeHealthTopicDescriptor,
+        TypeHealthTopicRelatedHealthTopic,
+        TypeHealthTopicSeeReference,
+        TypeHealthTopicBodyPart,
+        TypeHealthTopic,
         # Clinical trials studies.
         TypeStudies,
         # MeSH descriptors.
@@ -300,6 +361,10 @@ schema = graphene.Schema(
         TypeUsers,
         # Application searches.
         TypeSearches,
+        # MedlinePlus health-topics.
+        TypeHealthTopics,
+        TypeHealthTopicGroups,
+        TypeBodyParts,
         # Clinical trials study statistics.
         TypeCountStudiesCountry,
         TypeCountStudiesOverallStatus,
