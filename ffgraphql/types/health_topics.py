@@ -128,3 +128,59 @@ class TypeHealthTopics(graphene.ObjectType):
 
         return objs
 
+
+class TypeHealthTopicGroups(graphene.ObjectType):
+    by_class_name = graphene.List(
+        of_type=TypeHealthTopicGroup,
+        description=(
+            "Retrieve MedlinePlus health-topic groups by the name of the class "
+            "they belong to."
+        ),
+        class_name=graphene.Argument(
+            type=graphene.String,
+            required=True,
+            description=(
+                "The name of the health-topic group class to retrieve groups "
+                "for."
+            ),
+        ),
+    )
+
+    @staticmethod
+    def resolve_by_class_name(
+        args: dict, info: graphene.ResolveInfo, class_name: str
+    ) -> List[ModelHealthTopicGroup]:
+        """ Retrieves `ModelHealthTopicGroup` record objects through their
+            class name.
+
+        Args:
+            args (dict): The resolver arguments.
+            info (graphene.ResolveInfo): The resolver info.
+            class_name (str): The name of the health-topic group class to
+                retrieve groups for.
+
+        Returns:
+             List[ModelHealthTopicGroup]: The retrieved `ModelHealthTopicGroup`
+                record objects or an empty list if no matches were found.
+        """
+
+        # Retrieve the query on `ModelHealthTopicGroup`.
+        query = TypeHealthTopicGroup.get_query(
+            info=info
+        )  # type: sqlalchemy.orm.query.Query
+
+        # Filter to the `ModelHealthTopicGroup` records matching the given
+        # class.
+        query = query.join(ModelHealthTopicGroup.health_topic_group_class)
+        query = query.filter(ModelHealthTopicGroupClass.name == class_name)
+
+        # Limit query to fields requested in the GraphQL query adding
+        # `load_only` and `joinedload` options as required.
+        query = apply_requested_fields(
+            info=info, query=query, orm_class=ModelHealthTopicGroup
+        )
+
+        objs = query.all()
+
+        return objs
+
