@@ -184,3 +184,55 @@ class TypeHealthTopicGroups(graphene.ObjectType):
 
         return objs
 
+
+class TypeBodyParts(graphene.ObjectType):
+    by_group_name = graphene.List(
+        of_type=TypeBodyPart,
+        description=(
+            "Retrieve MedlinePlus body-parts by the name of the group they "
+            "belong to."
+        ),
+        group_name=graphene.Argument(
+            type=graphene.String,
+            required=True,
+            description=(
+                "The name of the health-topic group to retrieve body-parts for."
+            ),
+        ),
+    )
+
+    @staticmethod
+    def resolve_by_group_name(
+        args: dict, info: graphene.ResolveInfo, group_name: str
+    ) -> List[ModelBodyPart]:
+        """ Retrieves `ModelBodyPart` record objects through their group name.
+
+        Args:
+            args (dict): The resolver arguments.
+            info (graphene.ResolveInfo): The resolver info.
+            group_name (str): The name of the health-topic group to retrieve
+                body-parts for.
+
+        Returns:
+             List[ModelBodyPart]: The retrieved `ModelBodyPart` record objects
+                or an empty list if no matches were found.
+        """
+
+        # Retrieve the query on `ModelBodyPart`.
+        query = TypeBodyPart.get_query(
+            info=info
+        )  # type: sqlalchemy.orm.query.Query
+
+        # Filter to the `ModelBodyPart` records matching the given group.
+        query = query.join(ModelBodyPart.health_topic_group)
+        query = query.filter(ModelHealthTopicGroup.name == group_name)
+
+        # Limit query to fields requested in the GraphQL query adding
+        # `load_only` and `joinedload` options as required.
+        query = apply_requested_fields(
+            info=info, query=query, orm_class=ModelBodyPart
+        )
+
+        objs = query.all()
+
+        return objs
