@@ -1,5 +1,9 @@
 ## Changelog
 
+### v0.22.0
+
+- Story No. 1758: Expose query methods for health-topic retrieval.
+
 ### v0.21.0
 
 - Story No. 1651: Fix facility-name guard.
